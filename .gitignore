@@ -1,2 +1,8 @@
 venv/
-.env 
+.env
+__pycache__/
+*.py[cod]
+db.sqlite3
+media/
+*.log
+.DS_Store
