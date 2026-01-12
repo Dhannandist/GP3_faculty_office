@@ -79,8 +79,8 @@ DATABASES = {
         'NAME': 'gp3_faculty_office',
         'USER': 'root',
         'PASSWORD': '',
-        'HOST': 'localhost',   # Atau '127.0.0.1'
-        'PORT': '3306',        # Port default MySQL/MariaDB
+        'HOST': 'localhost',   
+        'PORT': '3306',
     }
 }
 
@@ -136,3 +136,7 @@ STATICFILES_DIRS = [
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'admin:index'
+LOGOUT_REDIRECT_URL = 'login'
