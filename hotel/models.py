@@ -25,16 +25,17 @@ class Room(models.Model):
 # data tamu
 class Guest(models.Model):
     
-    nama = models.CharField(max_length=100, verbose_name='Nama Lengkap')
+    nama = models.CharField(max_length=100, verbose_name='Nama Lengkap', db_index=True)
     phone = models.CharField(max_length=20, verbose_name='No. Telepon')
     id_card_number = models.CharField(max_length=50, verbose_name='NIK/No. Identitas')
     
     room = models.ForeignKey(Room, on_delete=models.CASCADE, verbose_name='Kamar', db_column='room_id')
     
     check_in = models.DateTimeField(auto_now_add=True, verbose_name='Waktu Check-In')
-    check_in_date = models.DateField(auto_now_add=True, verbose_name='Tanggal Check-In')
+
+    check_in_date = models.DateField(auto_now_add=True, verbose_name='Tanggal Check-In', db_index=True)
     
-    check_out = models.DateTimeField(null=True, blank=True, verbose_name='Waktu Check-Out')
+    check_out = models.DateTimeField(null=True, blank=True, verbose_name='Waktu Check-Out', db_index=True)
     check_out_date = models.DateField(null=True, blank=True, verbose_name='Tanggal Check-Out')
     
     total_price = models.IntegerField(default=0, verbose_name='Total Pembayaran')
@@ -44,6 +45,13 @@ class Guest(models.Model):
         verbose_name = 'Data Tamu'
         verbose_name_plural = 'Daftar Tamu'
         ordering = ['-check_in']
+        
+        # index filter by date + room
+        indexes = [
+            models.Index(fields=['check_in_date', 'room'], name='idx_checkin_room'),
+            models.Index(fields=['-check_in'], name='idx_checkin_desc'),  
+            models.Index(fields=['check_out', 'room'], name='idx_checkout_room'),
+        ]
     
     def __str__(self):
         return f"{self.nama} - Kamar {self.room.room_number}"
@@ -82,6 +90,13 @@ class Report(models.Model):
         verbose_name = 'Laporan'
         verbose_name_plural = 'Daftar Laporan'
         ordering = ['-created_at']
+        
+        # index buat filter & sort laporan
+        indexes = [
+            models.Index(fields=['-created_at'], name='idx_report_created'),
+            models.Index(fields=['date_from', 'date_to'], name='idx_report_period'),  # filter by periode
+            models.Index(fields=['report_type', 'created_at'], name='idx_report_type_date'),  # filter by jenis + tanggal
+        ]
     
     def __str__(self):
         return f"{self.get_report_type_display()} - {self.date_from} s/d {self.date_to}"
