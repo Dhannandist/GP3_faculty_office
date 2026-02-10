@@ -9,4 +9,7 @@ urlpatterns = [
     
     # buat laporan bisa jalan
     path('api/report-data/', views.api_report_data, name='api_report_data'),
+
+    #buat checkout nya
+    path('checkout/<int:guest_id>/', views.process_checkout, name='process_checkout'),
 ]

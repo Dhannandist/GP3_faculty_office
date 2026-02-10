@@ -1,4 +1,5 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
+from django.utils import timezone
 from django.db.models import Sum
 from django.http import JsonResponse
 from django.contrib import messages
@@ -42,6 +43,41 @@ def dashboard(request):
 def reservasi_list(request):
     semua_tamu = Guest.objects.select_related('room').all().order_by('-check_in')
     return render(request, 'reservasi.html', {'data_tamu': semua_tamu})
+
+# checkout 
+def process_checkout(request, guest_id):
+    # ambil data tamu ID, kalo gak ada return ke 404
+    tamu = get_object_or_404(Guest, id=guest_id)
+
+    # ngecek tamu kalo emang belom check-out 
+    if not tamu.check_out:
+        # set waktu check-out ke waktu sekarang
+        tamu.check_out = timezone.now()
+
+        # ngitung durasi nginep (hari)
+        # kalo check-in dan check-out di hari yang sama,  ke hitungnya 1 hari
+        durasi = (tamu.check_out.date() - tamu.check_in.date()).days
+        if durasi < 1:
+            durasi = 1
+        
+        # hitung total tagihannya
+        tamu.total_price = durasi * tamu.room.price
+        
+        # 5. update status kamar jadi 'Available' lagi
+        kamar = tamu.room
+        kamar.status = 'available'
+        kamar.save()
+
+        # simpen perubahan data tamu
+        tamu.save()
+
+        messages.success(request, f"Check-out berhasil! Total tagihan: Rp {tamu.total_price:,}")
+    
+    else:
+        messages.warning(request, "Tamu ini sudah melakukan check-out sebelumnya.")
+
+    # kembali ke halaman reservasi
+    return redirect('reservasi')
 
 # buat payment
 def payments(request):
