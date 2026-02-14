@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -16,7 +17,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-jo=ofa&eqd^0w9tpvg=5dq)i$+pnmu)ii(xm7w55%q9j#_$&*$'
+SECRET_KEY = "django-insecure-jo=ofa&eqd^0w9tpvg=5dq)i$+pnmu)ii(xm7w55%q9j#_$&*$"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -27,59 +28,59 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'django.contrib.humanize',
-    'staff',
-    'hotel',
-    'dashboard',
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "django.contrib.humanize",
+    "staff",
+    "hotel",
+    "dashboard",
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = 'faculty_office.urls'
+ROOT_URLCONF = "faculty_office.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [BASE_DIR / "templates"],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'faculty_office.wsgi.application'
+WSGI_APPLICATION = "faculty_office.wsgi.application"
 
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'gp3_faculty_office',
-        'USER': 'root',
-        'PASSWORD': '',
-        'HOST': 'localhost',
-        'PORT': '3306',
+    "default": {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": "gp3_faculty_office",
+        "USER": "root",
+        "PASSWORD": "",
+        "HOST": "localhost",
+        "PORT": "3306",
     }
 }
 
@@ -88,27 +89,32 @@ DATABASES = {
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
+    # Username constraint
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
+
+
+# Login view in the app
+LOGIN_VIEW_NAME = "login"
+
+# Login redirect message
+LOGIN_REDIRECT_MSG = "Login dlu lek"
 
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'id'
+LANGUAGE_CODE = "id"
 
-TIME_ZONE = 'Asia/Jakarta'
+TIME_ZONE = "Asia/Jakarta"
 
 USE_I18N = True
 
@@ -118,34 +124,39 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = "static/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # --- CUSTOM USER MODEL ---
-AUTH_USER_MODEL = 'staff.UserModel'
+AUTH_USER_MODEL = "staff.UserModel"
 
 # --- STATIC & MEDIA ---
 STATICFILES_DIRS = [
-    BASE_DIR / 'static',
+    BASE_DIR / "static",
 ]
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
-LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'admin:index'
-LOGOUT_REDIRECT_URL = 'login'
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "admin:index"
+LOGOUT_REDIRECT_URL = "login"
 
- # buat bypass (soalnya punya gw eror gabisa runserver wok)
+# buat bypass (soalnya punya gw eror gabisa runserver wok)
 import django.db.backends.mysql.base
 import django.db.backends.mysql.features
 
 # biar gak ngecek versi database (bypas)
-django.db.backends.mysql.base.DatabaseWrapper.check_database_version_supported = lambda self: None
+django.db.backends.mysql.base.DatabaseWrapper.check_database_version_supported = (
+    lambda self: None
+)
 
 # buat bypass jango nya biar gak make 'RETURNING' (Ini biar gak error 1064 di gw, kalo di lu apus aja bypassnya)
-django.db.backends.mysql.features.DatabaseFeatures.can_return_columns_from_insert = False
+django.db.backends.mysql.features.DatabaseFeatures.can_return_columns_from_insert = (
+    False
+)
+
