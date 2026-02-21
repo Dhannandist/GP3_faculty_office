@@ -1,2 +1,4 @@
-# GP3_faculty_office
-Grand Pangrango 3 Faculty Office App 
+# Grand Pangrango 3 Front office
+Grand Pangrango 3 Front Office Web App
+
+## ___Heavyly Work in Progress___
