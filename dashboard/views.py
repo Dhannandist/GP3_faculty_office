@@ -183,6 +183,19 @@ def process_checkout(request, guest_id):
     # kembali ke halaman reservasi
     return redirect('reservasi')
 
+
+@login_required
+def delete_reservasi(request, guest_id):
+    tamu = get_object_or_404(Guest, id=guest_id)
+
+    if request.method == "POST":
+        tamu.delete()
+        messages.success(request, "Data tamu berhasil dihapus.")
+    else:
+        messages.error(request, "Metode tidak diizinkan untuk hapus data tamu.")
+
+    return redirect("reservasi")
+
 # Admininstration Page
 def admininstration(request):
     return render(request, "admin/administrator.html")

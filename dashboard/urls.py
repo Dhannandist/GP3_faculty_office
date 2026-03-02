@@ -5,6 +5,7 @@ urlpatterns = [
     path("", views.dashboard, name="dashboard"),
     # Staff
     path("reservasi/", views.reservasi_list, name="reservasi"),
+    path("reservasi/delete/<int:guest_id>/", views.delete_reservasi, name="delete_reservasi"),
     path("payments/", views.payments, name="payments"),
     path("reports/", views.reports, name="reports"),
     path("administration/", views.admininstration, name="admininstration"),
