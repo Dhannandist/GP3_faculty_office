@@ -5,6 +5,7 @@ from django.http import JsonResponse
 from django.contrib import messages
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django import forms
+from django.views.decorators.http import require_POST
 import datetime
 
 from hotel.models import Guest, Room
@@ -185,16 +186,19 @@ def process_checkout(request, guest_id):
 
 
 @login_required
-def delete_reservasi(request, guest_id):
-    tamu = get_object_or_404(Guest, id=guest_id)
+@require_POST
+def delete_reservation(request, guest_id):
+    guest = get_object_or_404(Guest, id=guest_id)
 
-    if request.method == "POST":
-        tamu.delete()
-        messages.success(request, "Data tamu berhasil dihapus.")
-    else:
-        messages.error(request, "Metode tidak diizinkan untuk hapus data tamu.")
+    room = guest.room
+    if room and room.status == "booked":
+        room.status = "available"
+        room.save()
 
+    guest.delete()
+    messages.success(request, "Data tamu berhasil dihapus.")
     return redirect("reservasi")
+
 
 # Admininstration Page
 def admininstration(request):

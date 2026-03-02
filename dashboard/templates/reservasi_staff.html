@@ -50,51 +50,61 @@
                             <span class="badge bg-dark">CHECK-OUT</span>
                         {% endif %}
                     </td>
-                    <td class="d-flex gap-2">
-                        {% if not tamu.check_out %}
-                            <button type="button" 
-                                    class="btn btn-sm btn-danger fw-bold" 
-                                    data-bs-toggle="modal" 
-                                    data-bs-target="#modalCheckOut{{ tamu.id }}">
-                                <i class="fas fa-sign-out-alt me-1"></i> Check Out
-                            </button>
+                    <td>
+                          {% if not tamu.check_out %}
+                              <button type="button" 
+                                      class="btn btn-sm btn-danger fw-bold" 
+                                      data-bs-toggle="modal" 
+                                      data-bs-target="#modalCheckOut{{ tamu.id }}">
+                                  <i class="fas fa-sign-out-alt me-1"></i> Check Out
+                              </button>
 
-                            <form action="{% url 'delete_reservasi' tamu.id %}" method="POST" onsubmit="return confirm('Hapus data tamu ini dari sistem dan dashboard?');">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-outline-danger fw-bold">
-                                    <i class="fas fa-trash-alt me-1"></i> Hapus
-                                </button>
-                            </form>
+                              <form action="{% url 'delete_reservation' tamu.id %}" method="POST" class="d-inline ms-1">
+                                  {% csrf_token %}
+                                  <button type="submit" class="btn btn-sm btn-outline-danger"
+                                          onclick="return confirm('Yakin ingin menghapus data tamu ini?');">
+                                      Hapus
+                                  </button>
+                              </form>
 
-                            <div class="modal fade" id="modalCheckOut{{ tamu.id }}" tabindex="-1">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title">Konfirmasi Check-Out</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <p>Apakah Anda yakin ingin memproses check-out untuk:</p>
-                                            <ul>
-                                                <li><strong>Nama:</strong> {{ tamu.nama }}</li>
-                                                <li><strong>Kamar:</strong> {{ tamu.room.room_number }}</li>
-                                            </ul>
-                                            <p class="text-danger small">Tindakan ini akan menghitung total biaya dan menyelesaikan transaksi.</p>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                                            <form action="{% url 'process_checkout' tamu.id %}" method="POST">
-                                                {% csrf_token %}
-                                                <button type="submit" class="btn btn-danger">Ya, Proses Check-Out</button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        {% else %}
-                            <button class="btn btn-sm btn-outline-secondary">Selesai</button>
-                        {% endif %}
-                    </td>
+                              <tbody>
+                                    <div class="modal fade" id="modalCheckOut{{ tamu.id }}" tabindex="-1">
+                                  <div class="modal-dialog">
+                                      <div class="modal-content">
+                                          <div class="modal-header">
+                                              <h5 class="modal-title">Konfirmasi Check-Out</h5>
+                                              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                          </div>
+                                          <div class="modal-body">
+                                              <p>Apakah Anda yakin ingin memproses check-out untuk:</p>
+                                              <ul>
+                                                  <li><strong>Nama:</strong> {{ tamu.nama }}</li>
+                                                  <li><strong>Kamar:</strong> {{ tamu.room.room_number }}</li>
+                                              </ul>
+                                              <p class="text-danger small">Tindakan ini akan menghitung total biaya dan menyelesaikan transaksi.</p>
+                                          </div>
+                                          <div class="modal-footer">
+                                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                              <form action="{% url 'process_checkout' tamu.id %}" method="POST">
+                                                  {% csrf_token %}
+                                                  <button type="submit" class="btn btn-danger">Ya, Proses Check-Out</button>
+                                              </form>
+                                          </div>
+                                      </div>
+                                  </div>
+                              </div>
+                          {% else %}
+                              <button class="btn btn-sm btn-outline-secondary">Selesai</button>
+
+                              <form action="{% url 'delete_reservation' tamu.id %}" method="POST" class="d-inline ms-1">
+                                  {% csrf_token %}
+                                  <button type="submit" class="btn btn-sm btn-outline-danger"
+                                          onclick="return confirm('Yakin ingin menghapus data tamu ini?');">
+                                      Hapus
+                                  </button>
+                              </form>
+                          {% endif %}
+                      </td>
                     </tr>
                     {% endfor %}
                     </tbody>
