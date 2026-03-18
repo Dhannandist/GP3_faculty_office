@@ -65,7 +65,21 @@ def dashboard(request):
 @login_required
 def dashboard_admin(req):
     if req.method == "POST":
-        pass
+        nomor_kamar_input = req.POST.get("kamar")
+        try:
+            kamar_obj = Room.objects.get(room_number=nomor_kamar_input)
+            Guest.objects.create(
+                nama=req.POST.get("nama_tamu"),
+                id_card_number=req.POST.get("no_ktp"),
+                phone=req.POST.get("no_hp"),
+                room=kamar_obj,
+            )
+            kamar_obj.status = "booked"
+            kamar_obj.save()
+            messages.success(req, "Tamu berhasil check-in.")
+        except Room.DoesNotExist:
+            messages.error(req, "Nomor kamar tidak ditemukan.")
+        return redirect("dashboard")
 
     data_tamu_dashboard = (
         Guest.objects.select_related("room").filter(check_out__isnull=True).order_by("-check_in")[:5]
@@ -84,7 +98,21 @@ def dashboard_admin(req):
 @login_required
 def dashboard_staff(req):
     if req.method == "POST":
-        pass
+        nomor_kamar_input = req.POST.get("kamar")
+        try:
+            kamar_obj = Room.objects.get(room_number=nomor_kamar_input)
+            Guest.objects.create(
+                nama=req.POST.get("nama_tamu"),
+                id_card_number=req.POST.get("no_ktp"),
+                phone=req.POST.get("no_hp"),
+                room=kamar_obj,
+            )
+            kamar_obj.status = "booked"
+            kamar_obj.save()
+            messages.success(req, "Tamu berhasil check-in.")
+        except Room.DoesNotExist:
+            messages.error(req, "Nomor kamar tidak ditemukan.")
+        return redirect("dashboard")
 
     data_tamu_dashboard = (
         Guest.objects.select_related("room").filter(check_out__isnull=True).order_by("-check_in")[:5]
