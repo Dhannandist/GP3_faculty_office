@@ -186,10 +186,11 @@ def process_checkout(request, guest_id):
     if not tamu.check_out:
         # set waktu check-out ke waktu sekarang
         tamu.check_out = timezone.now()
+        tamu.check_out_date = timezone.localdate()
 
         # ngitung durasi nginep (hari)
         # kalo check-in dan check-out di hari yang sama,  ke hitungnya 1 hari
-        durasi = (tamu.check_out.date() - tamu.check_in.date()).days
+        durasi = (tamu.check_out_date - tamu.check_in.date()).days
         if durasi < 1:
             durasi = 1
         
@@ -236,16 +237,16 @@ def admininstration(request):
 # api reports
 def api_report_data(request):
     periode = request.GET.get("periode", "daily")
-    now = datetime.datetime.now()
+    now = timezone.localtime(timezone.now())
 
     if periode == "daily":
-        data = Guest.objects.filter(check_in__date=now.date())
+        data = Guest.objects.filter(check_out_date=now.date(), total_price__gt=0)
         judul = "PENDAPATAN HARI INI"
     elif periode == "monthly":
-        data = Guest.objects.filter(check_in__month=now.month)
+        data = Guest.objects.filter(check_out_date__month=now.month, total_price__gt=0)
         judul = "PENDAPATAN BULAN INI"
     else:
-        data = Guest.objects.all()
+        data = Guest.objects.filter(check_out_date__isnull=False, total_price__gt=0)
         judul = "TOTAL PENDAPATAN"
 
     total = data.aggregate(Sum("total_price"))["total_price__sum"] or 0
@@ -319,7 +320,6 @@ def manage_staff(req):
             guru_id = req.POST.get("guru_id")
             guru = GuruModel.objects.get(pk=guru_id)
             user = guru.id_guru
-            # Delete the user (this will cascade delete the guru due to OneToOneField)
             user.delete()
             messages.success(req, "Guru deleted successfully!")
             return redirect("manage_guru")
