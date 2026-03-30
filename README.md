@@ -45,7 +45,6 @@ DATABASES = {
 
 ```bash
 # 1. Clone repo
-=======
 git clone https://github.com/Dhannandist/GP3_faculty_office/
 
 # 2. Install dependencies
@@ -63,14 +62,14 @@ python manage.py runserver
 
 ---
 
--# STRUKTUR
+# STRUKTUR
 
 ```
-faculty_office/ #  Root
- app/            #  core/base templates (belum dibikin)
+faculty_office/  #  Root
+ app/            #  core/base templates (On Progress)
  staff/          #  Authentication
  hotel/          #  Data models
- dashboard/      #  UI (belum dibikin)
- hardware/       #  IoT untuk tapping kartu di fo (belum dibikin)
+ dashboard/      #  UI
+ hardware/       #  IoT untuk tapping kartu di fo (Not Started)
  templates/      #  Html templates
 ```
