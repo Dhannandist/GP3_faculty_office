@@ -22,7 +22,6 @@
                             <th class="ps-4">No. Kamar</th>
                             <th>Nama Tamu</th>
                             <th>No. HP</th>
-                            <th>Reservasi</th>
                             <th>Check-In</th>
                             <th>Check-Out</th>
                             <th>Status</th>
@@ -38,7 +37,6 @@
         <td class="fw-bold">{{ tamu.nama }}</td>
         <td>{{ tamu.phone }}</td>
         <td>{{ tamu.check_in_date|date:"d M Y" }} → {{ tamu.check_out_date|date:"d M Y" }}</td>
-        <td>{{ tamu.check_in_date|date:"d M Y" }}</td>
         <td>
             {% if tamu.check_out %}
                 {{ tamu.check_out|date:"d M Y, H:i" }}

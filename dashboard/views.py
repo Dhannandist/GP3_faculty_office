@@ -1,10 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from django.http import JsonResponse
 from django.contrib import messages
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django import forms
+from django.views.decorators.http import require_POST
 import datetime
 
 from hotel.models import Guest, Room
@@ -45,7 +46,9 @@ def dashboard(request):
         return redirect("dashboard")
 
     data_tamu_dashboard = (
-        Guest.objects.select_related("room").all().order_by("-check_in")[:5]
+        Guest.objects.select_related("room")
+        .filter(check_out__isnull=True)
+        .order_by("-check_in")[:5]
     )
     context = {
         "total_rooms": Room.objects.count(),
@@ -58,16 +61,54 @@ def dashboard(request):
 
     messages.success(request, request.user.username)
     messages.success(request, "test msg")
-    return render(request, "dashboard.html", context)
+    return render(request, "base.html", context)
 
 
 @login_required
 def dashboard_admin(req):
     if req.method == "POST":
-        pass
+        nomor_kamar_input = req.POST.get("kamar")
+        try:
+            kamar_obj = Room.objects.get(room_number=nomor_kamar_input)
+            # validation
+            if Guest.objects.filter(room=kamar_obj, check_out__isnull=True).exists():
+                messages.error(req, "Kamar Sudah Terisi")
+                return redirect("dashboard")
+
+            check_in = req.POST.get("check_in")
+            check_out = req.POST.get("check_out")
+
+            conflict = (
+                Guest.objects.filter(room=kamar_obj)
+                .filter(Q(check_in_date__lt=check_out) & Q(check_out_date__gt=check_in))
+                .exists()
+            )
+
+            if conflict:
+                messages.error(request, "Kamar sudah dibooking di tanggal tersebut.")
+                return redirect("dashboard")
+
+            Guest.objects.create(
+                nama=req.POST.get("nama_tamu"),
+                id_card_number=req.POST.get("no_ktp"),
+                phone=req.POST.get("no_hp"),
+                room=kamar_obj,
+                check_in_date=check_in,
+                check_out_date=check_out,
+            )
+
+            kamar_obj.status = "booked"
+            kamar_obj.save()
+
+            messages.success(req, "Tamu berhasil check-in.")
+        except Room.DoesNotExist:
+            messages.error(req, "Nomor kamar tidak ditemukan.")
+        return redirect("dashboard")
 
     data_tamu_dashboard = (
-        Guest.objects.select_related("room").all().order_by("-check_in")[:5]
+        Guest.objects.select_related("room")
+        .filter(check_out__isnull=True)
+        .order_by("-check_in")[:5]
     )
     context = {
         "total_rooms": Room.objects.count(),
@@ -83,10 +124,43 @@ def dashboard_admin(req):
 @login_required
 def dashboard_staff(req):
     if req.method == "POST":
-        pass
+        nomor_kamar_input = req.POST.get("kamar")
+        try:
+            kamar_obj = Room.objects.get(room_number=nomor_kamar_input)
+
+            check_in = req.POST.get("check_in")
+            check_out = req.POST.get("check_out")
+
+            conflict = (
+                Guest.objects.filter(room=kamar_obj)
+                .filter(Q(check_in_date__lt=check_out) & Q(check_out_date__gt=check_in))
+                .exists()
+            )
+
+            if conflict:
+                messages.error(req, "Kamar sudah dibooking di tanggal tersebut.")
+                return redirect("dashboard")
+
+            Guest.objects.create(
+                nama=req.POST.get("nama_tamu"),
+                id_card_number=req.POST.get("no_ktp"),
+                phone=req.POST.get("no_hp"),
+                room=kamar_obj,
+                check_in_date=check_in,
+                check_out_date=check_out,
+            )
+
+            kamar_obj.status = "booked"
+            kamar_obj.save()
+            messages.success(req, "Tamu berhasil check-in.")
+        except Room.DoesNotExist:
+            messages.error(req, "Nomor kamar tidak ditemukan.")
+        return redirect("dashboard")
 
     data_tamu_dashboard = (
-        Guest.objects.select_related("room").all().order_by("-check_in")[:5]
+        Guest.objects.select_related("room")
+        .filter(check_out__isnull=True)
+        .order_by("-check_in")[:5]
     )
     context = {
         "total_rooms": Room.objects.count(),
@@ -103,7 +177,7 @@ def dashboard_staff(req):
 def reservasi_list(request):
     semua_tamu = Guest.objects.select_related("room").all().order_by("-check_in")
     if request.user.role == "ADMIN":
-        html_page = "reservasi_admin.html"
+        html_page = "admin/reservasi_admin.html"
     else:
         html_page = "reservasi_staff.html"
 
@@ -130,7 +204,7 @@ def payments(request):
     }
 
     if request.user.role == "ADMIN":
-        html_page = "payments_admin.html"
+        html_page = "admin/payments_admin.html"
     else:
         html_page = "payments_staff.html"
 
@@ -139,7 +213,7 @@ def payments(request):
     return render(request, html_page, context)
 
 
-# Reports 
+# Reports
 def reports(request):
     if request.user.role == "ADMIN":
         html_page = "admin/reports_admin.html"
@@ -149,39 +223,59 @@ def reports(request):
     html_page = "reports_staff.html"
     return render(request, html_page)
 
+
 def process_checkout(request, guest_id):
     # ambil data tamu ID, kalo gak ada return ke 404
     tamu = get_object_or_404(Guest, id=guest_id)
 
-    # ngecek tamu kalo emang belom check-out 
+    # ngecek tamu kalo emang belom check-out
     if not tamu.check_out:
         # set waktu check-out ke waktu sekarang
         tamu.check_out = timezone.now()
+        tamu.check_out_date = timezone.localdate()
 
         # ngitung durasi nginep (hari)
         # kalo check-in dan check-out di hari yang sama,  ke hitungnya 1 hari
-        durasi = (tamu.check_out.date() - tamu.check_in.date()).days
+        durasi = (tamu.check_out_date - tamu.check_in.date()).days
         if durasi < 1:
             durasi = 1
-        
+
         # hitung total tagihannya
         tamu.total_price = durasi * tamu.room.price
-        
+
         # 5. update status kamar jadi 'Available' lagi
         kamar = tamu.room
-        kamar.status = 'available'
+        kamar.status = "available"
         kamar.save()
 
         # simpen perubahan data tamu
         tamu.save()
 
-        messages.success(request, f"Check-out berhasil! Total tagihan: Rp {tamu.total_price:,}")
-    
+        messages.success(
+            request, f"Check-out berhasil! Total tagihan: Rp {tamu.total_price:,}"
+        )
+
     else:
         messages.warning(request, "Tamu ini sudah melakukan check-out sebelumnya.")
 
     # kembali ke halaman reservasi
-    return redirect('reservasi')
+    return redirect("reservasi")
+
+
+@login_required
+@require_POST
+def delete_reservation(request, guest_id):
+    guest = get_object_or_404(Guest, id=guest_id)
+
+    room = guest.room
+    if room and room.status == "booked":
+        room.status = "available"
+        room.save()
+
+    guest.delete()
+    messages.success(request, "Data tamu berhasil dihapus.")
+    return redirect("reservasi")
+
 
 # Admininstration Page
 def admininstration(request):
@@ -191,16 +285,16 @@ def admininstration(request):
 # api reports
 def api_report_data(request):
     periode = request.GET.get("periode", "daily")
-    now = datetime.datetime.now()
+    now = timezone.localtime(timezone.now())
 
     if periode == "daily":
-        data = Guest.objects.filter(check_in__date=now.date())
+        data = Guest.objects.filter(check_out_date=now.date(), total_price__gt=0)
         judul = "PENDAPATAN HARI INI"
     elif periode == "monthly":
-        data = Guest.objects.filter(check_in__month=now.month)
+        data = Guest.objects.filter(check_out_date__month=now.month, total_price__gt=0)
         judul = "PENDAPATAN BULAN INI"
     else:
-        data = Guest.objects.all()
+        data = Guest.objects.filter(check_out_date__isnull=False, total_price__gt=0)
         judul = "TOTAL PENDAPATAN"
 
     total = data.aggregate(Sum("total_price"))["total_price__sum"] or 0
@@ -260,28 +354,3 @@ def manage_staff(req):
             user.is_superuser = is_superuser
             # user.
             user.save()
-
-            # Update mapel name
-            if nama_mapel:
-                mapel = guru.matapelajaranmodel_set.first()
-                if mapel:
-                    mapel.nama_mapel = nama_mapel
-                    mapel.save()
-
-            messages.success(req, "Guru updated successfully!")
-            return redirect("manage_guru")
-        elif "delete_guru" in req.POST:
-            guru_id = req.POST.get("guru_id")
-            guru = GuruModel.objects.get(pk=guru_id)
-            user = guru.id_guru
-            # Delete the user (this will cascade delete the guru due to OneToOneField)
-            user.delete()
-            messages.success(req, "Guru deleted successfully!")
-            return redirect("manage_guru")
-    else:
-        guru_form = GuruForm()
-
-    guru_list = GuruModel.objects.prefetch_related("matapelajaranmodel_set").all()
-    mapel_list = MataPelajaranModel.objects.all()
-    context = {"guru_list": guru_list, "mapel_list": mapel_list, "guru_form": guru_form}
-    return render(req, "admin/manage_guru.html", context)

@@ -73,4 +73,3 @@ faculty_office/  #  Root
  hardware/       #  IoT untuk tapping kartu di fo (Not Started)
  templates/      #  Html templates
 ```
-
