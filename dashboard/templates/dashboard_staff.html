@@ -48,11 +48,20 @@
                         {% csrf_token %}
 
                         {% for msg in messages %}
-                          <div class="row mb-3">
-                            <h1>{{ msg }}</h1>
+                          <div class="alert 
+                            {% if msg.tags == 'error' %}alert-danger
+                            {% elif msg.tags == 'success' %}alert-success
+                            {% elif msg.tags == 'warning' %}alert-warning
+                            {% else %}alert-info
+                            {% endif %}
+                            alert-dismissible fade show"
+                            role="alert">
+
+                            {{ msg }}
+
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                           </div>
                         {% endfor %}
-
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="small fw-bold mb-2">Nama tamu</label>
@@ -78,6 +87,16 @@
                                         </option>
                                     {% endfor %}
                                 </select>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="small fw-bold mb-2">Check-in</label>
+                                <input type="date" name="check_in" class="form-control bg-light" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small fw-bold mb-2">Check-out</label>
+                                <input type="date" name="check_out" class="form-control bg-light" required>
                             </div>
                         </div>
                         <div class="d-grid">
@@ -107,7 +126,7 @@
                         </div>
                         <div class="small text-muted mb-1">{{ log.nama }}</div>
                         <div class="small text-secondary" style="font-size: 0.75rem;">
-                            <i class="far fa-clock me-1"></i> {{ log.check_in|date:"d M, H:i" }}
+                            <i class="far fa-clock me-1"></i> {{ log.check_in_date|date:"d M Y" }} → {{ log.check_out_date|date:"d M Y" }}
                         </div>
                     </div>
                     {% empty %}
