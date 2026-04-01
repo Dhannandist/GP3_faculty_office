@@ -1,12 +1,13 @@
+from ntpath import exists
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
-from django.db.models import Sum, Q
+from django.db.models import Sum, Q, Prefetch
 from django.http import JsonResponse
 from django.contrib import messages
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django import forms
 from django.views.decorators.http import require_POST
-import datetime
+from datetime import datetime
 
 from hotel.models import Guest, Room
 from staff.models import StaffModel, UserModel
@@ -70,22 +71,28 @@ def dashboard_admin(req):
         nomor_kamar_input = req.POST.get("kamar")
         try:
             kamar_obj = Room.objects.get(room_number=nomor_kamar_input)
-            # validation
-            if Guest.objects.filter(room=kamar_obj, check_out__isnull=True).exists():
-                messages.error(req, "Kamar Sudah Terisi")
-                return redirect("dashboard")
 
             check_in = req.POST.get("check_in")
             check_out = req.POST.get("check_out")
 
-            conflict = (
-                Guest.objects.filter(room=kamar_obj)
-                .filter(Q(check_in_date__lt=check_out) & Q(check_out_date__gt=check_in))
-                .exists()
-            )
+            check_in_date = datetime.strptime(check_in, "%Y-%m-%d").date()
+            check_out_date = datetime.strptime(check_out, "%Y-%m-%d").date()
+
+            # Calculate Nights
+            nights = (check_out_date - check_in_date).days
+
+            if nights <= 0:
+                messages.error(req, "Check-Out harus setelah check-in")
+                return redirect("dashboard")
+
+            conflict = Guest.objects.filter(
+                room=kamar_obj,
+                check_in_date__lt=check_out_date,
+                check_out_date__gt=check_in_date,
+            ).exists()
 
             if conflict:
-                messages.error(request, "Kamar sudah dibooking di tanggal tersebut.")
+                messages.error(req, "Kamar sudah dibooking di tanggal tersebut.")
                 return redirect("dashboard")
 
             Guest.objects.create(
@@ -93,8 +100,9 @@ def dashboard_admin(req):
                 id_card_number=req.POST.get("no_ktp"),
                 phone=req.POST.get("no_hp"),
                 room=kamar_obj,
-                check_in_date=check_in,
-                check_out_date=check_out,
+                check_in_date=check_in_date,
+                check_out_date=check_out_date,
+                total_price=nights * kamar_obj.price,
             )
 
             kamar_obj.status = "booked"
@@ -110,13 +118,33 @@ def dashboard_admin(req):
         .filter(check_out__isnull=True)
         .order_by("-check_in")[:5]
     )
+
+    data_tamu = Guest.objects.select_related("room").all()
+
+    today = timezone.localdate()
+
+    rooms = Room.objects.prefetch_related("guest_set").order_by("room_number")
+
+    for room in rooms:
+        room.is_occupied_today = any(
+            g.check_in_date <= today and g.check_out_date > today
+            for g in room.guest_set.all()
+        )
+
+        room.is_reserved_future = any(
+            g.check_in_date > today and g.check_out is None
+            for g in room.guest_set.all()
+        )
+
     context = {
         "total_rooms": Room.objects.count(),
         "available": Room.objects.filter(status="available").count(),
         "occupied": Room.objects.filter(status="booked").count(),
         "reservasi_list": data_tamu_dashboard,
-        "rooms": Room.objects.all().order_by("room_number"),
+        "rooms": rooms,
+        "data_tamu": data_tamu,
         "intcomma": intcomma,
+        "today": timezone.localdate(),
     }
     return render(req, "admin/dashboard_admin.html", context)
 
@@ -131,11 +159,21 @@ def dashboard_staff(req):
             check_in = req.POST.get("check_in")
             check_out = req.POST.get("check_out")
 
-            conflict = (
-                Guest.objects.filter(room=kamar_obj)
-                .filter(Q(check_in_date__lt=check_out) & Q(check_out_date__gt=check_in))
-                .exists()
-            )
+            check_in_date = datetime.strptime(check_in, "%Y-%m-%d").date()
+            check_out_date = datetime.strptime(check_out, "%Y-%m-%d").date()
+
+            # Calculate Nights
+            nights = (check_out_date - check_in_date).days
+
+            if nights <= 0:
+                messages.error(req, "Check-Out harus setelah check-in")
+                return redirect("dashboard")
+
+            conflict = Guest.objects.filter(
+                room=kamar_obj,
+                check_in_date__lt=check_out_date,
+                check_out_date__gt=check_in_date,
+            ).exists()
 
             if conflict:
                 messages.error(req, "Kamar sudah dibooking di tanggal tersebut.")
@@ -146,12 +184,14 @@ def dashboard_staff(req):
                 id_card_number=req.POST.get("no_ktp"),
                 phone=req.POST.get("no_hp"),
                 room=kamar_obj,
-                check_in_date=check_in,
-                check_out_date=check_out,
+                check_in_date=check_in_date,
+                check_out_date=check_out_date,
+                total_price=nights * kamar_obj.price,
             )
 
             kamar_obj.status = "booked"
             kamar_obj.save()
+
             messages.success(req, "Tamu berhasil check-in.")
         except Room.DoesNotExist:
             messages.error(req, "Nomor kamar tidak ditemukan.")
@@ -162,15 +202,35 @@ def dashboard_staff(req):
         .filter(check_out__isnull=True)
         .order_by("-check_in")[:5]
     )
+
+    data_tamu = Guest.objects.select_related("room").all()
+
+    today = timezone.localdate()
+
+    rooms = Room.objects.prefetch_related("guest_set").order_by("room_number")
+
+    for room in rooms:
+        room.is_occupied_today = any(
+            g.check_in_date <= today and g.check_out_date > today
+            for g in room.guest_set.all()
+        )
+
+        room.is_reserved_future = any(
+            g.check_in_date > today and g.check_out is None
+            for g in room.guest_set.all()
+        )
+
     context = {
         "total_rooms": Room.objects.count(),
         "available": Room.objects.filter(status="available").count(),
         "occupied": Room.objects.filter(status="booked").count(),
         "reservasi_list": data_tamu_dashboard,
-        "rooms": Room.objects.all().order_by("room_number"),
+        "rooms": rooms,
+        "data_tamu": data_tamu,
         "intcomma": intcomma,
+        "today": timezone.localdate(),
     }
-    return render(req, "dashboard_staff.html", context)
+    return render(req, "admin/dashboard_admin.html", context)
 
 
 # reservasi list
@@ -225,40 +285,32 @@ def reports(request):
 
 
 def process_checkout(request, guest_id):
-    # ambil data tamu ID, kalo gak ada return ke 404
     tamu = get_object_or_404(Guest, id=guest_id)
 
-    # ngecek tamu kalo emang belom check-out
-    if not tamu.check_out:
-        # set waktu check-out ke waktu sekarang
-        tamu.check_out = timezone.now()
-        tamu.check_out_date = timezone.localdate()
-
-        # ngitung durasi nginep (hari)
-        # kalo check-in dan check-out di hari yang sama,  ke hitungnya 1 hari
-        durasi = (tamu.check_out_date - tamu.check_in.date()).days
-        if durasi < 1:
-            durasi = 1
-
-        # hitung total tagihannya
-        tamu.total_price = durasi * tamu.room.price
-
-        # 5. update status kamar jadi 'Available' lagi
-        kamar = tamu.room
-        kamar.status = "available"
-        kamar.save()
-
-        # simpen perubahan data tamu
-        tamu.save()
-
-        messages.success(
-            request, f"Check-out berhasil! Total tagihan: Rp {tamu.total_price:,}"
-        )
-
-    else:
+    # prevent duplicate checkout
+    if tamu.check_out:
         messages.warning(request, "Tamu ini sudah melakukan check-out sebelumnya.")
+        return redirect("reservasi")
 
-    # kembali ke halaman reservasi
+    tamu.check_out = timezone.now()
+    tamu.check_out_date = timezone.localdate()
+
+    durasi = (tamu.check_out_date - tamu.check_in_date).days
+    if durasi < 1:
+        durasi = 1
+
+    tamu.total_price = durasi * tamu.room.price
+
+    kamar = tamu.room
+    kamar.status = "available"
+    kamar.save()
+
+    tamu.save()
+
+    messages.success(
+        request, f"Check-out berhasil! Total tagihan: Rp {tamu.total_price:,}"
+    )
+
     return redirect("reservasi")
 
 

@@ -162,4 +162,3 @@ django.db.backends.mysql.base.DatabaseWrapper.check_database_version_supported =
 django.db.backends.mysql.features.DatabaseFeatures.can_return_columns_from_insert = (
     False
 )
-

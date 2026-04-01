@@ -4,140 +4,252 @@
 
 {% block content %}
 <div class="container-fluid px-0 px-md-2">
-    <div class="page-shell">
-        <div class="page-title-bar d-flex justify-content-between align-items-center">
-            <h4 class="m-0 fw-bold text-dark">Dashboard Overview</h4>
-            <small class="text-muted">User: {{ user.username }}</small>
-        </div>
+  <div class="page-shell">
 
-        <div class="row mb-4 g-3">
-        <div class="col-md-4">
-            <div class="card stat-card stat-card-primary h-100 border-0">
-                <div class="card-body">
-                    <h6 class="text-uppercase ls-1 mb-1 opacity-75">Total Rooms</h6>
-                    <h1 class="display-5 fw-bold mb-0">{{ total_rooms }}</h1>
-                </div>
-            </div>
+    <div class="page-title-bar d-flex justify-content-between align-items-center">
+      <h4 class="m-0 fw-bold text-dark">Dashboard Overview</h4>
+      <small class="text-muted">User: {{ user.username }}</small>
+    </div>
+
+    <div class="row mb-4 g-3">
+      <div class="col-md-4">
+        <div class="card stat-card stat-card-primary h-100 border-0">
+          <div class="card-body">
+            <h6 class="text-uppercase ls-1 mb-1 opacity-75">Total Rooms</h6>
+            <h1 class="display-5 fw-bold mb-0">{{ total_rooms }}</h1>
+          </div>
         </div>
-        <div class="col-md-4">
-            <div class="card stat-card stat-card-success h-100 border-0">
-                <div class="card-body">
-                    <h6 class="text-uppercase ls-1 mb-1 opacity-75">Available (Kosong)</h6>
-                    <h1 class="display-5 fw-bold mb-0">{{ available }}</h1>
-                </div>
-            </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card stat-card stat-card-success h-100 border-0">
+          <div class="card-body">
+            <h6 class="text-uppercase ls-1 mb-1 opacity-75">Available (Kosong)</h6>
+            <h1 class="display-5 fw-bold mb-0">{{ available }}</h1>
+          </div>
         </div>
-        <div class="col-md-4">
-            <div class="card stat-card stat-card-danger h-100 border-0">
-                <div class="card-body">
-                    <h6 class="text-uppercase ls-1 mb-1 opacity-75">Occupied (Terisi)</h6>
-                    <h1 class="display-5 fw-bold mb-0">{{ occupied }}</h1>
-                </div>
-            </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card stat-card stat-card-danger h-100 border-0">
+          <div class="card-body">
+            <h6 class="text-uppercase ls-1 mb-1 opacity-75">Occupied (Terisi)</h6>
+            <h1 class="display-5 fw-bold mb-0">{{ occupied }}</h1>
+          </div>
         </div>
+      </div>
     </div>
 
     <div class="row g-3">
-        <div class="col-lg-8">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-white fw-bold py-3 text-uppercase small">
-                    <i class="fas fa-edit me-2"></i> Guest Check-In
+
+      <!-- LEFT: FORM -->
+      <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+          <div class="card-header bg-white fw-bold py-3 text-uppercase small">
+            <i class="fas fa-edit me-2"></i> Guest Check-In
+          </div>
+
+          <div class="card-body p-4">
+            <form method="POST">
+              {% csrf_token %}
+
+              {% if messages %}
+              {% for msg in messages %}
+                <div class="alert 
+                  {% if msg.tags == 'error' %}alert-danger
+                  {% elif msg.tags == 'success' %}alert-success
+                  {% elif msg.tags == 'warning' %}alert-warning
+                  {% else %}alert-info
+                  {% endif %}
+                  alert-dismissible fade show"
+                  role="alert">
+
+                  {{ msg }}
+
+                  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
-                <div class="card-body p-4">
-                    <form method="POST">
-                        {% csrf_token %}
+              {% endfor %}
+            {% endif %}
 
-                        {% for msg in messages %}
-                          <div class="alert 
-                            {% if msg.tags == 'error' %}alert-danger
-                            {% elif msg.tags == 'success' %}alert-success
-                            {% elif msg.tags == 'warning' %}alert-warning
-                            {% else %}alert-info
-                            {% endif %}
-                            alert-dismissible fade show"
-                            role="alert">
-
-                            {{ msg }}
-
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                          </div>
-                        {% endfor %}
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="small fw-bold mb-2">Nama tamu</label>
-                                <input type="text" name="nama_tamu" class="form-control bg-light" placeholder="Nama Lengkap..." required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="small fw-bold mb-2">No. identitas</label>
-                                <input type="text" name="no_ktp" class="form-control bg-light" placeholder="KTP / SIM..." required>
-                            </div>
-                        </div>
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <label class="small fw-bold mb-2">No. handphone</label>
-                                <input type="text" name="no_hp" class="form-control bg-light" placeholder="08..." required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="small fw-bold mb-2">Pilih kamar</label>
-                                <select name="kamar" class="form-select bg-light" required>
-                                    <option value="" selected>-- Pilih --</option>
-                                    {% for room in rooms %}
-                                        <option value="{{ room.room_number }}">
-                                            {{ room.room_number }} - Rp {{ room.price|intcomma }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="small fw-bold mb-2">Check-in</label>
-                                <input type="date" name="check_in" class="form-control bg-light" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="small fw-bold mb-2">Check-out</label>
-                                <input type="date" name="check_out" class="form-control bg-light" required>
-                            </div>
-                        </div>
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary fw-bold py-2">Simpan &amp; check-in tamu</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-white fw-bold py-3 text-uppercase small">
-                    <i class="fas fa-list me-2"></i> Recent Activity
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label class="small fw-bold mb-2">Nama tamu</label>
+                  <input type="text" name="nama_tamu" class="form-control bg-light" placeholder="Nama Lengkap..." required>
                 </div>
 
-                <div class="list-group list-group-flush scroll-area">
-                    {% for log in reservasi_list %}
-                    <div class="list-group-item py-3">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="fw-bold text-dark">Kamar {{ log.room.room_number }}</span>
-                            {% if log.check_out %}
-                                <span class="badge bg-warning text-dark rounded-0">BOOKED</span>
-                            {% else %}
-                                <span class="badge bg-success rounded-0">ACTIVE</span>
-                            {% endif %}
-                        </div>
-                        <div class="small text-muted mb-1">{{ log.nama }}</div>
-                        <div class="small text-secondary" style="font-size: 0.75rem;">
-                            <i class="far fa-clock me-1"></i> {{ log.check_in_date|date:"d M Y" }} → {{ log.check_out_date|date:"d M Y" }}
-                        </div>
-                    </div>
-                    {% empty %}
-                    <div class="list-group-item text-center py-4 text-muted">
-                        Belum ada aktivitas.
-                    </div>
+                <div class="col-md-6">
+                  <label class="small fw-bold mb-2">No. identitas</label>
+                  <input type="text" name="no_ktp" class="form-control bg-light" placeholder="KTP / SIM..." required>
+                </div>
+              </div>
+
+              <div class="row mb-4">
+                <div class="col-md-6">
+                  <label class="small fw-bold mb-2">No. handphone</label>
+                  <input type="text" name="no_hp" class="form-control bg-light" placeholder="08..." required>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="small fw-bold mb-2">Pilih kamar</label>
+                  <select name="kamar" class="form-select bg-light" required>
+                    <option value="" selected>-- Pilih --</option>
+                    {% for room in rooms %}
+                    <option value="{{ room.room_number }}">
+                    {{ room.room_number }} - Rp {{ room.price|intcomma }}
+                    </option>
                     {% endfor %}
+                  </select>
                 </div>
-            </div>
+              </div>
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label class="small fw-bold mb-2">Check-in</label>
+                  <input type="date" name="check_in" id="check_in" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                  <label>Check-out</label>
+                  <input type="date" name="check_out" id="check_out" class="form-control" required>
+                </div>
+              </div>
+              <div class="d-grid">
+                <button type="submit" class="btn btn-primary fw-bold py-2">
+                  Simpan &amp; check-in tamu
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
+      </div>
+
+      <!-- RIGHT: RECENT -->
+      <div class="col-lg-4">
+        <div class="card shadow-sm border-0 h-100">
+          <div class="card-header bg-white fw-bold py-3 text-uppercase small">
+            <i class="fas fa-list me-2"></i> Recent Activity
+          </div>
+
+          <div class="list-group list-group-flush scroll-area">
+            {% for log in reservasi_list %}
+            <div class="list-group-item py-3">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="fw-bold text-dark">
+                  Kamar {{ log.room.room_number }}
+                </span>
+
+                {% if log.check_out %}
+                <span class="badge bg-warning text-dark rounded-0">BOOKED</span>
+                {% else %}
+                <span class="badge bg-success rounded-0">ACTIVE</span>
+                {% endif %}
+              </div>
+
+              <div class="small text-muted mb-1">{{ log.nama }}</div>
+
+              <div class="small text-secondary" style="font-size: 0.75rem;">
+                <i class="far fa-clock me-1"></i>
+                {{ log.check_in_date|date:"d M" }} → {{ log.check_out_date|date:"d M Y" }}
+                <br>
+                <small class="text-muted">
+                  {{ log.check_out_date|timeuntil:log.check_in_date }}
+                </small>
+              </div>
+            </div>
+            {% empty %}
+            <div class="list-group-item text-center py-4 text-muted">
+              Belum ada aktivitas.
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- ROOMS LIST -->
+      <div class="col-12 mt-4">
+        <div class="card shadow-sm border-0">
+          <div class="card-header bg-white py-3">
+            <h6 class="m-0 fw-bold text-secondary">
+              <i class="fas fa-bed me-2"></i> DAFTAR SEMUA KAMAR
+            </h6>
+          </div>
+
+          <div class="card-body">
+            <div class="row g-3">
+
+              {% for room in rooms %}
+              <div class="col-md-3">
+                <div class="card h-100 shadow-sm border-0
+                            {% if room.status == 'available' %}
+                            border-start border-success border-4
+                            {% elif room.status == 'booked' %}
+                            border-start border-danger border-4
+                            {% else %}
+                            border-start border-secondary border-4
+                            {% endif %}
+                            ">
+
+                  <div class="card-body text-center">
+                    <h5 class="fw-bold">Kamar {{ room.room_number }}</h5>
+
+                    <p class="text-muted mb-2">
+                    Rp {{ room.price|intcomma }}
+                    </p>
+
+                  {% if room.is_occupied_today %}
+                      <span class="badge bg-danger">Terisi</span>
+
+                  {% elif room.is_reserved_future %}
+                      <span class="badge bg-warning text-dark">Dipesan</span>
+
+                  {% else %}
+                  <span class="badge bg-success">Tersedia</span>
+                  {% endif %}
+
+                  {% for tamu in data_tamu %}
+                  {% if tamu.room.id == room.id and not tamu.check_out %}
+
+                  <div class="mt-2 small text-muted">
+                    👤 {{ tamu.nama }}
+                  </div>
+
+                  <!-- DATE RANGE -->
+                  <div class="mt-1 small">
+                    {{ tamu.check_in_date|date:"d M" }} → {{ tamu.check_out_date|date:"d M Y" }}
+                  </div>
+
+                  <!-- NIGHTS -->
+                  <div class="small text-muted">
+                    {{ tamu.check_out_date|timeuntil:tamu.check_in_date }}
+                  </div>
+
+                  {% endif %}
+                  {% endfor %}
+
+                  </div>
+                </div>
+              </div>
+              {% empty %}
+              <p class="text-muted">Tidak ada kamar.</p>
+              {% endfor %}
+
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    </div>
+  </div>
 </div>
+</div>
+<script>
+  const checkInInput = document.querySelector('input[name="check_in"]');
+  const checkOutInput = document.querySelector('input[name="check_out"]');
+
+  checkInInput.addEventListener("change", function() {
+    checkOutInput.min = this.value;
+
+    // reset checkout if invalid
+    if (checkOutInput.value && checkOutInput.value <= this.value) {
+      checkOutInput.value = "";
+    }
+  });
+</script>
 {% endblock %}
