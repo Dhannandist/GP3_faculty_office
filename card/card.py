@@ -39,6 +39,7 @@ class SerialCom:
             if read == "READY":
                 print(read)
                 return True
+
     # Close serial communication
     def close_serial(self):
         self.ser.close()
@@ -59,26 +60,47 @@ class SerialCom:
         # Ensure it has newline
         output += "\n"
         self.ser.write(output.encode())
-        print("Sent")
-        return True
+
+        # Update response status
+        return self.receive_serial()
+
+# Inheritance of SerialCom utilities
+class Card(SerialCom):
+    # Write into a card
+    def write_card(self, data: str) -> str:
+        write_result = self.send_serial("WRITE %s" %(data))
+        if not write_result:
+            print("Can't write into the card!")
+            return None
+        return write_result
+
+    # Read card details
+    def read_card_data(self) -> str:
+        card_details = self.send_serial("READ")
+        if not card_details:
+            print("Can't get card's detail!")
+            return None
+        return card_details
 
     # Ping serial port to ensure serial communication is live
-    def ping_serial(self, status_to_check: str="OK"):
+    def ping_serial(self, status_to_check: str="OK") -> str:
         if not self.is_initialized:
             print("not initialized")
             return False
 
-        if not self.send_serial("PING"):
-            return False
-
-        output = self.receive_serial()
-        if output != status_to_check:
+        ping_result = self.send_serial("PING")
+        if ping_result != status_to_check:
             print("not same")
             return False
-        return output
-
+        return ping_result
 
 # Runs only when directly running this code standalone
 if (__name__ == "__main__"):
-    com = SerialCom("COM5", 9600)
-    print("Status: %s" %(com.ping_serial()))
+    card = Card("COM5", 9600)
+    print("Status: %s" %(card.ping_serial()))
+
+    write_result = card.write_card("{'id': 0, 'room': 312}")
+    if write_result == "SUCCESS":
+        print("Successfully write card!")
+        print(write_result)
+        print("Details: %s" %(card.read_card_data()))
