@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "staff",
     "hotel",
     "dashboard",
+    "card",
 ]
 
 MIDDLEWARE = [
