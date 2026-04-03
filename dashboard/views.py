@@ -16,6 +16,10 @@ from staff.models import StaffModel, UserModel
 from faculty_office.utils.admin_required import admin_required
 from faculty_office.utils.login_required import login_required
 
+# Card utilities
+from card.card import Card
+import json
+
 
 @login_required
 def dashboard(request):
@@ -104,6 +108,16 @@ def dashboard_admin(req):
                 check_out_date=check_out_date,
                 total_price=nights * kamar_obj.price,
             )
+
+            data = json.dumps(Guest.objects.get())
+            try:
+                card = Card("COM5", 9600)
+                if card.write_card(data) == "SUCCESS":
+                    ## SUCCESS WRITING INTO CARD ##
+                    print("WRITE SUCCESS")
+                card.close_serial()
+            except:
+                pass
 
             kamar_obj.status = "booked"
             kamar_obj.save()
