@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Virtual environment
 venv/
 .venv/
@@ -18,3 +19,7 @@ media/
 .DS_Store
 venv_old/
 faculty_office/settings.py
+=======
+venv/
+.env 
+>>>>>>> 714efe26f7267d7cd42a8028a1cc5af6ddf10cc0
