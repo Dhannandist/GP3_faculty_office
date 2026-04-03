@@ -17,3 +17,4 @@ media/
 *.log
 .DS_Store
 venv_old/
+faculty_office/settings.py
