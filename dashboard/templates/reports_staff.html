@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h4 class="fw-bold text-dark mt-4 mb-4">LAPORAN HOTEL</h4>
+
+    <div class="btn-group w-100 mb-4 shadow-sm" role="group">
+        <button type="button" class="btn btn-outline-primary fw-bold active" id="btn-daily" onclick="loadReport('daily')">HARIAN</button>
+        <button type="button" class="btn btn-outline-primary fw-bold" id="btn-monthly" onclick="loadReport('monthly')">BULANAN</button>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4 bg-primary text-white">
+        <div class="card-body text-center p-5">
+            <h6 class="text-uppercase opacity-75 mb-2" id="report-title">Loading...</h6>
+            <h1 class="display-3 fw-bold mb-0" id="report-revenue">Rp {{ total_pendapatan }}</h1>
+            <p class="mt-2" id="report-subtitle">Total Tamu: {{ total_tamu }}</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // buat fungsi javasctipt untuk masukin ke backendnya 
+    function loadReport(periode) {
+        // buat update tampilan tombol
+        document.querySelectorAll('.btn-group .btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-' + periode).classList.add('active');
+
+        // buat tampilin loadingnya
+        document.getElementById('report-revenue').innerText = "...";
+        document.getElementById('report-title').innerText = "MEMUAT DATA...";
+
+        // buat panggil API 
+        fetch(`/api/report-data/?periode=${periode}`)
+            .then(res => res.json())
+            .then(data => {
+                // Ini buat masukin data ke layar
+                document.getElementById('report-title').innerText = data.judul;
+                document.getElementById('report-revenue').innerText = "Rp " + data.total_pendapatan;
+                document.getElementById('report-subtitle').innerText = "Total Tamu: " + data.total_tamu;
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById('report-revenue').innerText = "Error";
+            });
+    }
+
+    // ini buat jalanin otomatis pas dibuka
+    document.addEventListener("DOMContentLoaded", function() {
+        loadReport('daily');
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,135 @@
+/* Global layout */
+body {
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  background-color: #e5e7eb;
+  color: #111827;
+}
+
+#wrapper {
+  display: flex;
+  min-height: 100vh;
+}
+
+#sidebar-wrapper {
+  width: 250px;
+  background-color: #111827;
+  color: #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  padding-top: 0.75rem;
+}
+
+#sidebar-wrapper .sidebar-heading {
+  font-weight: 700;
+  font-size: 1.05rem;
+  padding: 0.9rem 1.25rem;
+  border-bottom: 1px solid #1f2937;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+#sidebar-wrapper .list-group-item {
+  border: none;
+  background-color: transparent;
+  color: #e5e7eb;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.9rem;
+  border-radius: 0;
+  margin: 0;
+}
+
+#sidebar-wrapper .list-group-item:hover {
+  background-color: #1f2937;
+  color: #ffffff;
+}
+
+#sidebar-wrapper .list-group-item.active {
+  background-color: #0d6efd;
+  color: #ffffff;
+}
+
+#sidebar-wrapper .list-group-item i {
+  width: 18px;
+}
+
+#page-content-wrapper {
+  flex: 1;
+  background-color: #e5e7eb;
+}
+
+.topbar {
+  background-color: #ffffff;
+  border-radius: 4px;
+  padding: 0.75rem 1.25rem;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.card {
+  border-radius: 0;
+}
+
+.card.shadow-sm {
+  box-shadow: none;
+}
+
+.scroll-area {
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.page-shell {
+  background-color: #f9fafb;
+  border-radius: 4px;
+  padding: 1.5rem 1.75rem 2rem;
+  box-shadow: 0 0 0 1px #e5e7eb;
+}
+
+.page-title-bar {
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.page-title-bar h4 {
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+table.table thead th {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+table.table tbody td {
+  font-size: 0.9rem;
+}
+
+.ls-1 {
+  letter-spacing: 0.08em;
+}
+
+.opacity-75 {
+  opacity: 0.75 !important;
+}
+
+.badge {
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.login-box {
+  border-radius: 0.75rem !important;
+}
+
+.timeline-item {
+  border-left: 4px solid #0d6efd;
+  padding-left: 10px;
+  margin-bottom: 10px;
+}

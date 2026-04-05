@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 mt-4">
+        <h4 class="fw-bold text-dark">DATA TAMU HOTEL</h4>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCheckIn">
+            + TAMU BARU
+        </button>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3">
+            <h6 class="m-0 fw-bold text-secondary">DAFTAR SEMUA TAMU (HISTORY)</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">No. Kamar</th>
+                            <th>Nama Tamu</th>
+                            <th>No. HP</th>
+                            <th>Reservasi</th>
+                            <th>Check-In</th>
+                            <th>Check-Out</th>
+                            <th>Status</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+    {% for tamu in data_tamu %}
+    <tr>
+        <td class="ps-4">
+            <span class="badge bg-secondary">{{ tamu.room.room_number }}</span>
+        </td>
+        <td class="fw-bold">{{ tamu.nama }}</td>
+        <td>{{ tamu.phone }}</td>
+        <td>{{ tamu.check_in_date|date:"d M Y" }} → {{ tamu.check_out_date|date:"d M Y" }}</td>
+        <td>{{ tamu.check_in_date|date:"d M Y" }}</td>
+        <td>
+            {% if tamu.check_out %}
+                {{ tamu.check_out|date:"d M Y, H:i" }}
+            {% else %}
+                -
+            {% endif %}
+        </td>
+        <td>
+            {% if not tamu.check_out %}
+                <span class="badge bg-success">MENGINAP</span>
+            {% else %}
+                <span class="badge bg-dark">CHECK-OUT</span>
+            {% endif %}
+        </td>
+        
+        <td>
+            {% if not tamu.check_out %}
+                <button type="button" 
+                        class="btn btn-sm btn-danger fw-bold" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#modalCheckOut{{ tamu.id }}">
+                    <i class="fas fa-sign-out-alt me-1"></i> Check Out
+                </button>
+
+                <form action="{% url 'delete_reservation' tamu.id %}" method="POST" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                            onclick="return confirm('Yakin ingin menghapus data tamu ini?');">
+                        Hapus
+                    </button>
+                </form>
+
+                <div class="modal fade" id="modalCheckOut{{ tamu.id }}" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Konfirmasi Check-Out</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Apakah Anda yakin ingin memproses check-out untuk:</p>
+                                <ul>
+                                    <li><strong>Nama:</strong> {{ tamu.nama }}</li>
+                                    <li><strong>Kamar:</strong> {{ tamu.room.room_number }}</li>
+                                </ul>
+                                <p class="text-danger small">Tindakan ini akan menghitung total biaya dan menyelesaikan transaksi.</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                <form action="{% url 'process_checkout' tamu.id %}" method="POST">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger">Ya, Proses Check-Out</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <button class="btn btn-sm btn-outline-secondary" disabled>Selesai</button>
+
+                <form action="{% url 'delete_reservation' tamu.id %}" method="POST" class="d-inline ms-1">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                            onclick="return confirm('Yakin ingin menghapus data tamu ini?');">
+                        Hapus
+                    </button>
+                </form>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalCheckIn" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Check-In Tamu Baru</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{% url 'dashboard' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nomor Kamar</label>
+                        <input type="text" name="kamar" class="form-control" placeholder="Cth: 101" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nama Lengkap</label>
+                        <input type="text" name="nama_tamu" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">No. Identitas (KTP)</label>
+                        <input type="text" name="no_ktp" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">No. Handphone</label>
+                        <input type="text" name="no_hp" class="form-control" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
