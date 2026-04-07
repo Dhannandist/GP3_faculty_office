@@ -71,12 +71,15 @@ class Guest(models.Model):
         return self.check_out is not None
 
     def clean(self):
-        if (
-            Guest.objects.filter(room=self.room, check_out__isnull=True)
-            .exclude(pk=self.pk)
-            .exists()
-        ):
-            raise ValidationError("Kamar ini sedang Terisi")
+        overlap = Guest.objects.filter(
+            room=self.room,
+            check_in_date__lt=self.check_out_date,
+            check_out_date__gt=self.check_in_date,
+            check_out__isnull=True,
+        ).exclude(pk=self.pk)
+
+        if overlap.exists():
+            raise ValidationError("Kamar sudah dibooking di tanggal tersebut.")
 
 
 # laporan keuangan

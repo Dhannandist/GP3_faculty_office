@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load humanize %}
 
 {% block content %}
 <div class="container-fluid px-4">
@@ -56,13 +57,11 @@
         
         <td>
             {% if not tamu.check_out %}
-                <button type="button" 
-                        class="btn btn-sm btn-danger fw-bold" 
-                        data-bs-toggle="modal" 
-                        data-bs-target="#modalCheckOut{{ tamu.id }}">
-                    <i class="fas fa-sign-out-alt me-1"></i> Check Out
-                </button>
-
+            <button type="button"
+                    class="btn btn-sm btn-primary"
+                    onclick="checkinRFID('{{ tamu.id }}')">
+              Check-In RFID
+            </button>
                 <form action="{% url 'delete_reservation' tamu.id %}" method="POST" class="d-inline">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-sm btn-outline-danger"
@@ -127,22 +126,40 @@
             <form method="POST" action="{% url 'dashboard' %}">
                 {% csrf_token %}
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Nomor Kamar</label>
-                        <input type="text" name="kamar" class="form-control" placeholder="Cth: 101" required>
+                  <div class="col-md-6">
+                    <label class="small fw-bold mb-2">Pilih kamar</label>
+                    <select name="kamar" class="form-select bg-light" required>
+                      <option value="" selected>-- Pilih --</option>
+                      {% for room in rooms %}
+                      <option value="{{ room.room_number }}">
+                      {{ room.room_number }} - Rp {{ room.price|intcomma }}
+                      </option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Nama Lengkap</label>
+                    <input type="text" name="nama_tamu" class="form-control" required>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">No. Identitas (KTP)</label>
+                    <input type="text" name="no_ktp" class="form-control" required>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">No. Handphone</label>
+                    <input type="text" name="no_hp" class="form-control" required>
+                  </div>
+                  <div class="row mb-3">
+                    <div class="col-md-6">
+                      <label class="small fw-bold mb-2">Check-in</label>
+                      <input type="date" name="check_in" id="check_in" class="form-control bg-light" required>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Nama Lengkap</label>
-                        <input type="text" name="nama_tamu" class="form-control" required>
+                    <div class="col-md-6">
+                      <label class="small fw-bold mb-2">Check-out</label>
+                      <input type="date" name="check_out" id="check_out" class="form-control bg-light" required>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">No. Identitas (KTP)</label>
-                        <input type="text" name="no_ktp" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">No. Handphone</label>
-                        <input type="text" name="no_hp" class="form-control" required>
-                    </div>
+                  </div>
+
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
