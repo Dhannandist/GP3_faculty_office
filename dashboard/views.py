@@ -119,29 +119,16 @@ def dashboard_admin(req):
             except Room.DoesNotExist:
                 messages.error(req, "Nomor kamar tidak ditemukan.")
 
-            return redirect("dashboard")
-            ## Write data into card ##
-            query = Guest.objects.values("check_in_date", "check_out_date").filter(nama=req.POST.get("nama_tamu"))
-            data = json.dumps(list(query), default=str)
-            try:
-                card = Card("COM5", 9600)
-                if card.write_card(data) == "SUCCESS":
-                    ## SUCCESS WRITING INTO CARD ##
-                    print("WRITE SUCCESS")
-                card.close_serial()
-            except:
-                pass
-
             kamar_obj.status = "booked"
             kamar_obj.save()
 
             messages.success(req, "Tamu berhasil check-in.")
-        except Room.DoesNotExist:
+
+            return redirect("dashboard")
             messages.error(req, "Nomor kamar tidak ditemukan.")
-        return redirect("dashboard")
 
         elif mode == "checkin":
-            return JsonResponse({"status": "handled_by_api"})
+            return redirect("dashboard")
 
     data_tamu_dashboard = (
         Guest.objects.select_related("room")
@@ -319,35 +306,20 @@ def api_checkin_rfid(request):
             check_out_date=check_out_date,
             total_price=nights * kamar_obj.price,
         )
+        guest.save()
+        print("guest save")
 
-        # JSON Data
-        card_data = json.dumps(
-            {
-                "guest": guest.nama,
-                "room": kamar_obj.room_number,
-                "check_in": str(check_in_date),
-                "check_out": str(check_out_date),
-                "nights": nights,
-            }
-        )
-
-        # Write to Card
+        ## Write data into card ##
+        query = Guest.objects.values("check_in_date", "check_out_date").filter(nama=nama)
+        data = json.dumps(list(query), default=str)
         try:
             card = Card("COM5", 9600)
-
-            write_status = card.write_card(card_data)
-
-            if write_status != "SUCCESS":
-                return JsonResponse(
-                    {"status": "error", "message": "Gagal menulis ke kartu"}
-                )
-
-            # OPTIONAL VERIFY
-            read_back = card.read_card_data()
-
+            if card.write_card(data) == "SUCCESS":
+                ## SUCCESS WRITING INTO CARD ##
+                print("WRITE SUCCESS")
             card.close_serial()
-
-        except Exception as e:
+            print("SERIAL CLOSED")
+        except:
             return JsonResponse({"status": "error", "message": f"RFID error: {str(e)}"})
 
         # Update Room Status
@@ -360,7 +332,7 @@ def api_checkin_rfid(request):
                 "status": "success",
                 "guest": guest.nama,
                 "room": kamar_obj.room_number,
-                "verify": read_back,
+                #"verify": read_back,
             }
         )
 
@@ -370,6 +342,9 @@ def api_checkin_rfid(request):
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)})
 
+
+def api_test(request):
+    return JsonResponse({"status": "success", "message": "API is working"})
 
 # @csrf_exempt
 # def api_checkin_rfid(request):

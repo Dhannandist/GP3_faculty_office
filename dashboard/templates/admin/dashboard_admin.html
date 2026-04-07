@@ -50,8 +50,9 @@
           </div>
 
           <div class="card-body p-4">
-            <form method="POST">
+            <form id="formCheckin" method="POST">
               {% csrf_token %}
+              <input type="hidden" name="mode" value="">
 
               {% if messages %}
               {% for msg in messages %}
@@ -112,12 +113,12 @@
                 </div>
               </div>
               <div class="d-grid mb-2 border border-dark rounded">
-                <button type="submit" name="mode" value="booking" class="btn btn-warning">
+                <button type="submit" value="booking" onclick="bookBtn()" class="btn btn-warning">
                   Booking
                 </button>
               </div>
               <div class="d-grid border border-dark rounded">
-                <button type="submit" name="mode" value="checkin" class="btn btn-success">
+                <button type="button" value="checkin" onclick="checkinBtn()" class="btn btn-success">
                   Check-In (RFID)
                 </button>
               </div>
@@ -240,7 +241,9 @@
   </div>
 </div>
 </div>
-<div class="modal fade hidden" id="rfidModal" tabindex="-1">
+
+<!-- Popup -->
+<div class="modal fade hidden" id="rfidModal" tabindex="-1" arial-modal="true" role="dialog">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content text-center p-4">
 
@@ -260,34 +263,47 @@
   </div>
 </div>
 <script>
-  const form = document.querySelector("form");
+  function bookBtn(){
+    document.querySelector('input[name="mode"]').value = "booking";
+  }
+  function checkinBtn(){
+    document.querySelector('input[name="mode"]').value = "checkin";
+    checkIn();
+  }
 
-  const checkInInput = document.querySelector('input[name="check_in"]');
-  const checkOutInput = document.querySelector('input[name="check_out"]');
+  const form = document.querySelector("#formCheckin");
+
+  // const checkInInput = document.querySelector('input[name="check_in"]');
+  // const checkOutInput = document.querySelector('input[name="check_out"]');
+  const checkInInput = document.querySelector('#check_in');
+  const checkOutInput = document.querySelector('#check_out');
 
   // Date validation
   checkInInput.addEventListener("change", function() {
-    checkOutInput.min = this.value;
+    checkOutInput.min = checkInInput.value;
 
-    if (checkOutInput.value && checkOutInput.value <= this.value) {
+    if (checkOutInput.value && checkOutInput.value <= checkInInput.value) {
       checkOutInput.value = "";
     }
   });
 
   // RFID + Form handler
-  form.addEventListener("submit", function(e){
+  async function checkIn() {
+    alert("submit");
 
     const formData = new FormData(form);
 
     // If NOT check-in → normal submit (booking)
-    if(formData.get("mode") !== "checkin"){
+    if(formData.get("mode") === "booking"){
       return;
     }
+    alert("checkin");
 
     //  Stop normal submit
-    e.preventDefault();
+    // e.preventDefault();
 
     const modal = new bootstrap.Modal(document.getElementById("rfidModal"));
+    //modal.show();
     modal.show();
 
     document.getElementById("rfidStatus").innerText = "Menulis ke kartu...";
@@ -295,39 +311,54 @@
     document.getElementById("rfidResult").innerHTML = "";
     document.getElementById("rfidCloseBtn").classList.add("d-none");
 
-    fetch("{% url 'api_checkin_rfid' %}", {
-      method: "POST",
-      body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
+    let data = await submit(formData);
+    console.log("Data received:", data);
+    alert("PASS - Data received: " + JSON.stringify(data));
 
-      document.getElementById("rfidSpinner").style.display = "none";
+    document.getElementById("rfidSpinner").style.display = "none";
 
-      if(data.status === "success"){
-        document.getElementById("rfidStatus").innerText = "Berhasil!";
-        document.getElementById("rfidResult").innerHTML =
-          `<b>${data.guest}</b><br>Kamar ${data.room}`;
+    if(data.status === "success"){
+      document.getElementById("rfidStatus").innerText = "Berhasil!";
+      document.getElementById("rfidResult").innerHTML =
+        `<b>${data.guest}</b><br>Kamar ${data.room}`;
 
-        // reload after success
-        setTimeout(() => {
-          location.reload();
-        }, 1500);
+      // reload after success
+      setTimeout(() => {
+        location.reload();
+      }, 1500);
 
-      } else {
-        document.getElementById("rfidStatus").innerText = "Gagal";
-        document.getElementById("rfidResult").innerText = data.message || "Terjadi error";
+    } else {
+      document.getElementById("rfidStatus").innerText = "Gagal";
+      document.getElementById("rfidResult").innerText = data.message || "Terjadi error";
+    }
+
+    document.getElementById("rfidCloseBtn").classList.remove("d-none");
+    }
+    async function submit(formData) {
+      alert("fetching");
+      console.log("Starting fetch to api_test...");
+      try {
+        // const response = await fetch("{% url 'api_test' %}", {
+        const response = await fetch("{% url 'api_checkin_rfid' %}", {
+          // method: "GET",
+          method: "POST",
+          body: formData,
+        });
+        console.log("Response received:", response);
+        const data = await response.json();
+        console.log("✓ API Response successfully parsed:", data);
+        document.getElementById("rfidStatus").innerText = "✓ " + data.status;
+        document.getElementById("rfidResult").innerText = JSON.stringify(data);
+        return data;
+      } catch (err) {
+        console.error("✗ API Error:", err);
+        document.getElementById("rfidSpinner").style.display = "none";
+        document.getElementById("rfidStatus").innerText = "✗ Error";
+        document.getElementById("rfidResult").innerText = err.message || String(err);
+        document.getElementById("rfidCloseBtn").classList.remove("d-none");
+        return { status: "error", message: err.message };
       }
+    }
 
-      document.getElementById("rfidCloseBtn").classList.remove("d-none");
-    })
-    .catch(err => {
-      document.getElementById("rfidSpinner").style.display = "none";
-      document.getElementById("rfidStatus").innerText = "Error";
-      document.getElementById("rfidResult").innerText = err;
-      document.getElementById("rfidCloseBtn").classList.remove("d-none");
-    });
-
-  });
 </script>
 {% endblock %}

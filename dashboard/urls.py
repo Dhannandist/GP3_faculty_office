@@ -18,4 +18,5 @@ urlpatterns = [
     path("checkout/<int:guest_id>/", views.process_checkout, name="process_checkout"),
     # RFID API
     path("api/checkin-rfid/", views.api_checkin_rfid, name="api_checkin_rfid"),
+    path("api/test/", views.api_test, name="api_test"),
 ]
