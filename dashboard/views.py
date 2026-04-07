@@ -109,7 +109,9 @@ def dashboard_admin(req):
                 total_price=nights * kamar_obj.price,
             )
 
-            data = json.dumps(Guest.objects.get())
+            ## Write data into card ##
+            query = Guest.objects.values("check_in_date", "check_out_date").filter(nama=req.POST.get("nama_tamu"))
+            data = json.dumps(list(query), default=str)
             try:
                 card = Card("COM5", 9600)
                 if card.write_card(data) == "SUCCESS":
