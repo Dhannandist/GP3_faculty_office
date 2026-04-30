@@ -262,21 +262,42 @@ def dashboard_staff(req):
 def api_checkin_rfid(request):
     if request.method != "POST":
         return JsonResponse({"status": "error", "message": "Invalid request"})
-
     try:
-        # Get Form Data
+        guest_id = request.POST.get("guest_id")
+
+        # If guest_id is provided, mark existing guest as checked-in
+        if guest_id:
+            tamu = Guest.objects.select_related("room").get(id=guest_id)
+
+            # Prevent double check-in
+            if tamu.check_in:
+                return JsonResponse(
+                    {"status": "error", "message": "Tamu sudah check-in"}
+                )
+
+            # Set check-in time
+            tamu.check_in = timezone.now()
+            tamu.save()
+
+            # Update room status
+            room = tamu.room
+            room.status = "booked"
+            room.save()
+            return JsonResponse(
+                {"status": "success", "guest": tamu.nama, "room": tamu.room.room_number}
+            )
+
+        # Otherwise, create new guest from form data
         nama = request.POST.get("nama_tamu")
         no_ktp = request.POST.get("no_ktp")
         no_hp = request.POST.get("no_hp")
         nomor_kamar = request.POST.get("kamar")
         check_in = request.POST.get("check_in")
+        is_checked_in = True
         check_out = request.POST.get("check_out")
-
         kamar_obj = Room.objects.get(room_number=nomor_kamar)
-
         check_in_date = datetime.strptime(check_in, "%Y-%m-%d").date()
         check_out_date = datetime.strptime(check_out, "%Y-%m-%d").date()
-
         nights = (check_out_date - check_in_date).days
         if nights <= 0:
             return JsonResponse({"status": "error", "message": "Tanggal tidak valid"})
@@ -306,45 +327,50 @@ def api_checkin_rfid(request):
             check_out_date=check_out_date,
             total_price=nights * kamar_obj.price,
         )
+
         guest.save()
         print("guest save")
 
         ## Write data into card ##
-        query = Guest.objects.values("check_in_date", "check_out_date").filter(nama=nama)
+        query = Guest.objects.values("check_in_date", "check_out_date").filter(
+            nama=nama
+        )
         data = json.dumps(list(query), default=str)
         try:
-            card = Card("COM5", 9600)
+            card = Card("COM3", 9600)
             if card.write_card(data) == "SUCCESS":
                 ## SUCCESS WRITING INTO CARD ##
+                guest.is_checked_in = True
+                guest.save()
                 print("WRITE SUCCESS")
             card.close_serial()
             print("SERIAL CLOSED")
-        except:
+        except Exception as e:
             return JsonResponse({"status": "error", "message": f"RFID error: {str(e)}"})
 
         # Update Room Status
         kamar_obj.status = "booked"
         kamar_obj.save()
 
-        # success response
+        # Success response
         return JsonResponse(
             {
                 "status": "success",
                 "guest": guest.nama,
                 "room": kamar_obj.room_number,
-                #"verify": read_back,
             }
         )
-
+    except Guest.DoesNotExist:
+        return JsonResponse({"status": "error", "message": "Tamu tidak ditemukan"})
     except Room.DoesNotExist:
         return JsonResponse({"status": "error", "message": "Kamar tidak ditemukan"})
-
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)})
 
 
 def api_test(request):
     return JsonResponse({"status": "success", "message": "API is working"})
+
 
 # @csrf_exempt
 # def api_checkin_rfid(request):
@@ -363,32 +389,69 @@ def api_test(request):
 
 # reservasi list
 def reservasi_list(request):
+    if request.method == "POST":
+        nomor_kamar = request.POST.get("kamar")
+        try:
+            room = Room.objects.get(room_number=nomor_kamar)
+            check_in = request.POST.get("check_in")
+            check_out = request.POST.get("check_out")
+            check_in_date = datetime.strptime(check_in, "%Y-%m-%d").date()
+            check_out_date = datetime.strptime(check_out, "%Y-%m-%d").date()
+            nights = (check_out_date - check_in_date).days
+            if nights <= 0:
+                messages.error(request, "Check-Out harus setelah check-in")
+                return redirect("reservasi")
+            Guest.objects.create(
+                nama=request.POST.get("nama_tamu"),
+                id_card_number=request.POST.get("no_ktp"),
+                phone=request.POST.get("no_hp"),
+                room=room,
+                check_in_date=check_in_date,
+                check_out_date=check_out_date,
+                total_price=nights * room.price,
+                is_checked_in=None,
+            )
+            messages.success(request, "Booking berhasil ditambahkan")
+        except Room.DoesNotExist:
+            messages.error(request, "Kamar tidak ditemukan")
+        return redirect("reservasi")
+
+    # GET
+    today = timezone.localdate()
+
     semua_tamu = Guest.objects.select_related("room").all().order_by("-check_in")
+
+    today = timezone.localdate()
+
+    active_guests = Guest.objects.filter(
+        is_checked_in=True, check_in__isnull=False, check_out__isnull=True
+    )
+
+    booked_guests = Guest.objects.filter(
+        is_checked_in__isnull=True, check_in_date__gte=today
+    )
+
+    history_guests = Guest.objects.filter(check_out__isnull=False)
+
+    # Price Total
+    for tamu in semua_tamu:
+        tamu.nights = (tamu.check_out_date - tamu.check_in_date).days
+
+    # Rooms (for dropdown)
+    rooms = Room.objects.all().order_by("room_number")
+
+    # Choose template
     if request.user.role == "ADMIN":
         html_page = "admin/reservasi_admin.html"
     else:
         html_page = "reservasi_staff.html"
-
-    today = timezone.localdate()
-
-    rooms = Room.objects.prefetch_related("guest_set").order_by("room_number")
-
-    for room in rooms:
-        room.is_occupied_today = any(
-            g.check_in_date <= today and g.check_out_date > today
-            for g in room.guest_set.all()
-        )
-
-        room.is_reserved_future = any(
-            g.check_in_date > today and g.check_out is None
-            for g in room.guest_set.all()
-        )
-
     context = {
-        "data_tamu": semua_tamu,
+        "active_guests": active_guests,
+        "booked_guests": booked_guests,
+        "history_guests": history_guests,
         "rooms": rooms,
+        "today": today,
     }
-
     return render(request, html_page, context)
 
 
@@ -414,8 +477,6 @@ def payments(request):
     else:
         html_page = "payments_staff.html"
 
-    ### REMOVE FOR PRODUCTION ###
-    html_page = "payments_staff.html"
     return render(request, html_page, context)
 
 

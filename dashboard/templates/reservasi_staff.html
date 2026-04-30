@@ -4,169 +4,535 @@
 
 {% block content %}
 <div class="container-fluid px-4">
-    <div class="d-flex justify-content-between align-items-center mb-4 mt-4">
-        <h4 class="fw-bold text-dark">DATA TAMU HOTEL</h4>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCheckIn">
-            + TAMU BARU
-        </button>
+
+  <!-- HEADER -->
+  <div class="d-flex justify-content-between align-items-center mb-4 mt-4">
+    <h4 class="fw-bold text-dark">DATA TAMU HOTEL</h4>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCheckIn">
+      + TAMU BARU
+    </button>
+  </div>
+
+  <!-- ================= ACTIVE ================= -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white py-3">
+      <h6 class="fw-bold text-success">ACTIVE (SEDANG MENGINAP)</h6>
     </div>
 
-    <div class="card shadow-sm border-0">
-        <div class="card-header bg-white py-3">
-            <h6 class="m-0 fw-bold text-secondary">DAFTAR SEMUA TAMU (HISTORY)</h6>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th class="ps-4">No. Kamar</th>
-                            <th>Nama Tamu</th>
-                            <th>No. HP</th>
-                            <th>Reservasi</th>
-                            <th>Check-In</th>
-                            <th>Check-Out</th>
-                            <th>Status</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-    {% for tamu in data_tamu %}
-    <tr>
-        <td class="ps-4">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-4">No. Kamar</th>
+            <th>Nama Tamu</th>
+            <th>No. HP</th>
+            <th>Reservasi</th>
+            <th>Check-In</th>
+            <th>Check-Out</th>
+            <th>Status</th>
+            <th>Total Harga</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for tamu in active_guests %}
+          <tr>
+            <td class="ps-4">
+              <span class="badge bg-secondary">{{ tamu.room.room_number }}</span>
+            </td>
+            <td class="fw-bold">{{ tamu.nama }}</td>
+            <td>{{ tamu.phone }}</td>
+            <td>{{ tamu.check_in_date|date:"d M Y" }} → {{ tamu.check_out_date|date:"d M Y" }}</td>
+            <td>{{ tamu.check_in_date|date:"d M Y" }}</td>
+            <td>-</td>
+            <td><span class="badge bg-success">MENGINAP</span></td>
+
+            <td>
+              <div class="small text-muted">
+                {{ tamu.nights }} malam × Rp {{ tamu.room.price|intcomma }}
+              </div>
+              <div class="fw-bold text-success">
+                Rp {{ tamu.total_price|intcomma }}
+              </div>
+            </td>
+
+            <td>
+              {% if not tamu.check_out %}
+              <button type="button" 
+                      class="btn btn-sm btn-danger fw-bold" 
+                      data-bs-toggle="modal" 
+                      data-bs-target="#modalCheckOut{{ tamu.id }}">
+                <i class="fas fa-sign-out-alt me-1"></i> Check Out
+              </button>
+
+              <button type="button"
+                      class="btn btn-sm btn-outline-danger"
+                      data-bs-toggle="modal"
+                      data-bs-target="#modalDelete{{ tamu.id }}">
+                Hapus
+              </button>
+
+              <div class="modal fade" id="modalCheckOut{{ tamu.id }}" tabindex="-1">
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title">Konfirmasi Check-Out</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                      <p>Apakah Anda yakin ingin memproses check-out untuk:</p>
+                      <ul>
+                        <li><strong>Nama:</strong> {{ tamu.nama }}</li>
+                        <li><strong>Kamar:</strong> {{ tamu.room.room_number }}</li>
+                      </ul>
+                      <p class="text-danger small">Tindakan ini akan menghitung total biaya dan menyelesaikan transaksi.</p>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                      <form action="{% url 'process_checkout' tamu.id %}" method="POST">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Ya, Proses Check-Out</button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="modal fade" id="modalDelete{{ tamu.id }}" tabindex="-1">
+                <div class="modal-dialog">
+                  <div class="modal-content">
+
+                    <div class="modal-header">
+                      <h5 class="modal-title text-danger">Konfirmasi Hapus</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                      <p>Apakah Anda yakin ingin menghapus data tamu ini?</p>
+
+                      <ul>
+                        <li><strong>Nama:</strong> {{ tamu.nama }}</li>
+                        <li><strong>Kamar:</strong> {{ tamu.room.room_number }}</li>
+                      </ul>
+
+                      <p class="text-danger small">
+                      Data yang dihapus tidak dapat dikembalikan.
+                      </p>
+                    </div>
+
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        Batal
+                      </button>
+
+                      <form action="{% url 'delete_reservation' tamu.id %}" method="POST">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                          Ya, Hapus
+                        </button>
+                      </form>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+              {% else %}
+              <button class="btn btn-sm btn-outline-secondary" disabled>Selesai</button>
+
+              <button type="button"
+                      class="btn btn-sm btn-outline-danger"
+                      data-bs-toggle="modal"
+                      data-bs-target="#modalDelete{{ tamu.id }}">
+                Hapus
+              </button>
+              div class="modal fade" id="modalDelete{{ tamu.id }}" tabindex="-1">
+              <div class="modal-dialog">
+                <div class="modal-content">
+
+                  <div class="modal-header">
+                    <h5 class="modal-title text-danger">Konfirmasi Hapus</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  </div>
+
+                  <div class="modal-body">
+                    <p>Apakah Anda yakin ingin menghapus data tamu ini?</p>
+
+                    <ul>
+                      <li><strong>Nama:</strong> {{ tamu.nama }}</li>
+                      <li><strong>Kamar:</strong> {{ tamu.room.room_number }}</li>
+                    </ul>
+
+                    <p class="text-danger small">
+                    Data yang dihapus tidak dapat dikembalikan.
+                    </p>
+                  </div>
+
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                      Batal
+                    </button>
+
+                    <form action="{% url 'delete_reservation' tamu.id %}" method="POST">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-danger">
+                        Ya, Hapus
+                      </button>
+                    </form>
+                  </div>
+
+                </div>
+              </div>
+    </div>
+
+
+    {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="8" class="text-center">Tidak ada tamu aktif</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+  </div>
+</div>
+<!-- ================= BOOKED ================= -->
+<div class="card shadow-sm border-0 mb-4">
+  <div class="card-header bg-white py-3">
+    <h6 class="fw-bold text-warning">BOOKED (BELUM CHECK-IN)</h6>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th class="ps-4">No. Kamar</th>
+          <th>Nama Tamu</th>
+          <th>No. HP</th>
+          <th>Reservasi</th>
+          <th>Check-In</th>
+          <th>Check-Out</th>
+          <th>Status</th>
+          <th>Total Harga</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for tamu in booked_guests %}
+        <tr>
+          <td class="ps-4">
             <span class="badge bg-secondary">{{ tamu.room.room_number }}</span>
-        </td>
-        <td class="fw-bold">{{ tamu.nama }}</td>
-        <td>{{ tamu.phone }}</td>
-        <td>{{ tamu.check_in_date|date:"d M Y" }} → {{ tamu.check_out_date|date:"d M Y" }}</td>
-        <td>{{ tamu.check_in_date|date:"d M Y" }}</td>
-        <td>
-            {% if tamu.check_out %}
-                {{ tamu.check_out|date:"d M Y, H:i" }}
-            {% else %}
-                -
-            {% endif %}
-        </td>
-        <td>
-            {% if not tamu.check_out %}
-                <span class="badge bg-success">MENGINAP</span>
-            {% else %}
-                <span class="badge bg-dark">CHECK-OUT</span>
-            {% endif %}
-        </td>
-        
-        <td>
-            {% if not tamu.check_out %}
-            <button type="button"
-                    class="btn btn-sm btn-primary"
+          </td>
+          <td class="fw-bold">{{ tamu.nama }}</td>
+          <td>{{ tamu.phone }}</td>
+          <td>{{ tamu.check_in_date|date:"d M Y" }} → {{ tamu.check_out_date|date:"d M Y" }}</td>
+          <td>{{ tamu.check_in_date|date:"d M Y" }}</td>
+          <td>-</td>
+
+          <td><span class="badge bg-warning text-dark">BOOKED</span></td>
+
+          <td>
+            <div class="small text-muted">
+              {{ tamu.nights }} malam × Rp {{ tamu.room.price|intcomma }}
+            </div>
+            <div class="fw-bold text-success">
+              Rp {{ tamu.total_price|intcomma }}
+            </div>
+          </td>
+
+          <td>
+            {% if tamu.check_in_date == today %}
+            <button class="btn btn-sm btn-primary"
                     onclick="checkinRFID('{{ tamu.id }}')">
               Check-In RFID
             </button>
-                <form action="{% url 'delete_reservation' tamu.id %}" method="POST" class="d-inline">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-sm btn-outline-danger"
-                            onclick="return confirm('Yakin ingin menghapus data tamu ini?');">
-                        Hapus
-                    </button>
-                </form>
-
-                <div class="modal fade" id="modalCheckOut{{ tamu.id }}" tabindex="-1">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">Konfirmasi Check-Out</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">
-                                <p>Apakah Anda yakin ingin memproses check-out untuk:</p>
-                                <ul>
-                                    <li><strong>Nama:</strong> {{ tamu.nama }}</li>
-                                    <li><strong>Kamar:</strong> {{ tamu.room.room_number }}</li>
-                                </ul>
-                                <p class="text-danger small">Tindakan ini akan menghitung total biaya dan menyelesaikan transaksi.</p>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                                <form action="{% url 'process_checkout' tamu.id %}" method="POST">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-danger">Ya, Proses Check-Out</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             {% else %}
-                <button class="btn btn-sm btn-outline-secondary" disabled>Selesai</button>
-
-                <form action="{% url 'delete_reservation' tamu.id %}" method="POST" class="d-inline ms-1">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-sm btn-outline-danger"
-                            onclick="return confirm('Yakin ingin menghapus data tamu ini?');">
-                        Hapus
-                    </button>
-                </form>
+            <button class="btn btn-sm btn-secondary" disabled>
+              Belum waktunya
+            </button>
             {% endif %}
-        </td>
-    </tr>
-    {% endfor %}
-</tbody>
-                </table>
+
+            <button type="button"
+                    class="btn btn-sm btn-outline-danger"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modalDelete{{ tamu.id }}">
+              Hapus
+            </button>
+            <div class="modal fade" id="modalDelete{{ tamu.id }}" tabindex="-1">
+              <div class="modal-dialog">
+                <div class="modal-content">
+
+                  <div class="modal-header">
+                    <h5 class="modal-title text-danger">Konfirmasi Hapus</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  </div>
+
+                  <div class="modal-body">
+                    <p>Apakah Anda yakin ingin menghapus data tamu ini?</p>
+
+                    <ul>
+                      <li><strong>Nama:</strong> {{ tamu.nama }}</li>
+                      <li><strong>Kamar:</strong> {{ tamu.room.room_number }}</li>
+                    </ul>
+
+                    <p class="text-danger small">
+                    Data yang dihapus tidak dapat dikembalikan.
+                    </p>
+                  </div>
+
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                      Batal
+                    </button>
+
+                    <form action="{% url 'delete_reservation' tamu.id %}" method="POST">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-danger">
+                        Ya, Hapus
+                      </button>
+                    </form>
+                  </div>
+
+                </div>
+              </div>
             </div>
-        </div>
-    </div>
+
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8" class="text-center">Tidak ada booking</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
+<!-- ================= HISTORY ================= -->
+<div class="card shadow-sm border-0 mb-4">
+  <div class="card-header bg-white py-3">
+    <h6 class="fw-bold text-dark">HISTORY (SELESAI)</h6>
+  </div>
 
-<div class="modal fade" id="modalCheckIn" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Check-In Tamu Baru</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form method="POST" action="{% url 'dashboard' %}">
-                {% csrf_token %}
-                <div class="modal-body">
-                  <div class="col-md-6">
-                    <label class="small fw-bold mb-2">Pilih kamar</label>
-                    <select name="kamar" class="form-select bg-light" required>
-                      <option value="" selected>-- Pilih --</option>
-                      {% for room in rooms %}
-                      <option value="{{ room.room_number }}">
-                      {{ room.room_number }} - Rp {{ room.price|intcomma }}
-                      </option>
-                      {% endfor %}
-                    </select>
-                  </div>
-                  <div class="mb-3">
-                    <label class="form-label">Nama Lengkap</label>
-                    <input type="text" name="nama_tamu" class="form-control" required>
-                  </div>
-                  <div class="mb-3">
-                    <label class="form-label">No. Identitas (KTP)</label>
-                    <input type="text" name="no_ktp" class="form-control" required>
-                  </div>
-                  <div class="mb-3">
-                    <label class="form-label">No. Handphone</label>
-                    <input type="text" name="no_hp" class="form-control" required>
-                  </div>
-                  <div class="row mb-3">
-                    <div class="col-md-6">
-                      <label class="small fw-bold mb-2">Check-in</label>
-                      <input type="date" name="check_in" id="check_in" class="form-control bg-light" required>
-                    </div>
-                    <div class="col-md-6">
-                      <label class="small fw-bold mb-2">Check-out</label>
-                      <input type="date" name="check_out" id="check_out" class="form-control bg-light" required>
-                    </div>
-                  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th class="ps-4">No. Kamar</th>
+          <th>Nama Tamu</th>
+          <th>No. HP</th>
+          <th>Reservasi</th>
+          <th>Check-In</th>
+          <th>Check-Out</th>
+          <th>Status</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
 
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary">Simpan</button>
-                </div>
+      <tbody>
+        {% for tamu in history_guests %}
+        <tr>
+          <td class="ps-4">
+            <span class="badge bg-secondary">{{ tamu.room.room_number }}</span>
+          </td>
+          <td class="fw-bold">{{ tamu.nama }}</td>
+          <td>{{ tamu.phone }}</td>
+          <td>{{ tamu.check_in_date|date:"d M Y" }} → {{ tamu.check_out_date|date:"d M Y" }}</td>
+          <td>{{ tamu.check_in_date|date:"d M Y" }}</td>
+          <td>{{ tamu.check_out|date:"d M Y, H:i" }}</td>
+
+          <td><span class="badge bg-dark">CHECK-OUT</span></td>
+          <td>
+            <form action="{% url 'delete_reservation' tamu.id %}" method="POST" class="d-inline">
+              {% csrf_token %}
+              <button class="btn btn-sm btn-outline-danger">Hapus</button>
             </form>
-        </div>
-    </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8" class="text-center">Tidak ada history</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
+<!-- Add Tamu Modal -->
+<div class="modal fade" id="modalCheckIn" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Reservasi Tamu Baru</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{% url 'reservasi' %}">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="small fw-bold mb-2">Pilih kamar</label>
+            <select name="kamar" class="form-select bg-light" required>
+              <option value="" selected>-- Pilih --</option>
+              {% for room in rooms %}
+              <option value="{{ room.room_number }}">
+              {{ room.room_number }} - Rp {{ room.price|intcomma }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Nama Lengkap</label>
+            <input type="text" name="nama_tamu" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">No. Identitas (KTP)</label>
+            <input type="text" name="no_ktp" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">No. Handphone</label>
+            <input type="text" name="no_hp" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <div class="mb-3">
+              <label class="small fw-bold mb-2">Check-in</label>
+              <input type="date" name="check_in" id="check_in" class="form-control bg-light" required>
+            </div>
+            <div class="mb-3">
+              <label class="small fw-bold mb-2">Check-out</label>
+              <input type="date" name="check_out" id="check_out" class="form-control bg-light" required>
+            </div>
+          </div>
+          <div id="pricePreviewModal" class="alert alert-info mt-2 d-none"></div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-primary">Booking</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- RFID MODAL -->
+<div class="modal fade" id="rfidModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content text-center p-4">
+
+      <h4 id="rfidStatus">Tempelkan kartu RFID...</h4>
+
+      <div id="rfidSpinner" class="my-3">
+        <div class="spinner-border text-primary"></div>
+      </div>
+
+      <div id="rfidResult" class="mt-3"></div>
+
+      <button class="btn btn-success mt-3 d-none" id="rfidCloseBtn" data-bs-dismiss="modal">
+        Selesai
+      </button>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  // Check In RFID Function
+  async function checkinRFID(guestId) {
+
+    const modal = new bootstrap.Modal(document.getElementById("rfidModal"));
+    modal.show();
+
+    document.getElementById("rfidStatus").innerText = "Menulis ke kartu...";
+    document.getElementById("rfidSpinner").style.display = "block";
+    document.getElementById("rfidResult").innerHTML = "";
+    document.getElementById("rfidCloseBtn").classList.add("d-none");
+
+    try {
+      const formData = new FormData();
+      formData.append("guest_id", guestId);
+
+      const response = await fetch("{% url 'api_checkin_rfid' %}", {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+
+      document.getElementById("rfidSpinner").style.display = "none";
+
+      if (data.status === "success") {
+        document.getElementById("rfidStatus").innerText = "Berhasil!";
+        document.getElementById("rfidResult").innerHTML =
+          `<b>${data.guest}</b><br>Kamar ${data.room}`;
+
+        setTimeout(() => location.reload(), 1500);
+
+      } else {
+        document.getElementById("rfidStatus").innerText = "Gagal";
+        document.getElementById("rfidResult").innerText =
+          data.message || "Terjadi error";
+      }
+
+    } catch (err) {
+      document.getElementById("rfidSpinner").style.display = "none";
+      document.getElementById("rfidStatus").innerText = "Error";
+      document.getElementById("rfidResult").innerText = err.message;
+    }
+
+    document.getElementById("rfidCloseBtn").classList.remove("d-none");
+  }
+
+  // Total Price Preview Function 
+  function setupPriceCalculator(prefix="") {
+    const roomSelect = document.querySelector(`${prefix} select[name="kamar"]`);
+    const checkIn = document.querySelector(`${prefix} input[name="check_in"]`);
+    const checkOut = document.querySelector(`${prefix} input[name="check_out"]`);
+    const preview = document.querySelector(`${prefix} #pricePreview, ${prefix} #pricePreviewModal`);
+
+    if (!roomSelect || !checkIn || !checkOut || !preview) return;
+
+    function calculate() {
+      const selectedOption = roomSelect.options[roomSelect.selectedIndex];
+      if (!selectedOption.value) {
+        preview.classList.add("d-none");
+        return;
+      }
+
+      // Extract price from text (Rp 100000)
+      const text = selectedOption.text;
+      const priceMatch = text.match(/Rp\s?([\d.,]+)/);
+      if (!priceMatch) return;
+
+      let price = priceMatch[1].replace(/\./g, "").replace(",", "");
+      price = parseInt(price);
+
+      const inDate = new Date(checkIn.value);
+      const outDate = new Date(checkOut.value);
+
+      if (!checkIn.value || !checkOut.value || outDate <= inDate) {
+        preview.classList.add("d-none");
+        return;
+      }
+
+      const nights = (outDate - inDate) / (1000 * 60 * 60 * 24);
+
+      const total = nights * price;
+
+      preview.innerHTML = `
+    <b>${nights} malam</b> × <b>Rp ${price.toLocaleString("id-ID")}</b><br>
+    <span class="fw-bold text-success">Total: Rp ${total.toLocaleString("id-ID")}</span>
+  `;
+
+      preview.classList.remove("d-none");
+    }
+
+    roomSelect.addEventListener("change", calculate);
+    checkIn.addEventListener("change", calculate);
+    checkOut.addEventListener("change", calculate);
+  }
+
+  // Run for both
+  setupPriceCalculator(""); // dashboard
+  setupPriceCalculator("#modalCheckIn"); // modal
+</script>
 {% endblock %}

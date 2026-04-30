@@ -49,6 +49,7 @@ class Guest(models.Model):
     )
     check_out_date = models.DateField()
     total_price = models.IntegerField(default=0, verbose_name="Total Pembayaran")
+    is_checked_in = models.BooleanField(null=True, blank=True)
 
     class Meta:
         db_table = "guests"

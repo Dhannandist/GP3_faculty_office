@@ -1,29 +1,28 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load humanize %}
+{% load humanize %}}
 
 {% block content %}
-<div class="container-fluid px-4">
-  <div class="container mt-3">
-    {% if messages %}
-    {% for msg in messages %}
-    <div class="alert 
-                {% if msg.tags == 'error' %}alert-danger
-                {% elif msg.tags == 'success' %}alert-success
-                {% elif msg.tags == 'warning' %}alert-warning
-                {% else %}alert-info
-                {% endif %}
-                alert-dismissible fade show shadow-sm"
-         role="alert">
+<div class="container mt-3">
+  {% if messages %}
+  {% for msg in messages %}
+  <div class="alert 
+              {% if msg.tags == 'error' %}alert-danger
+              {% elif msg.tags == 'success' %}alert-success
+              {% elif msg.tags == 'warning' %}alert-warning
+              {% else %}alert-info
+              {% endif %}
+              alert-dismissible fade show shadow-sm"
+       role="alert">
 
-      {{ msg }}
+    {{ msg }}
 
-      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-    {% endfor %}
-    {% endif %}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
   </div>
-
+  {% endfor %}
+  {% endif %}
+</div>
+<div class="container-fluid px-4">
   <div class="d-flex justify-content-between align-items-center mb-4 mt-4">
     <h4 class="fw-bold text-dark">DATA TAMU HOTEL</h4>
     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCheckIn">
@@ -75,10 +74,11 @@
 
               <td>
                 {% if not tamu.check_out %}
-                <button type="button"
-                        class="btn btn-sm btn-primary"
-                        onclick="checkinRFID('{{ tamu.id }}')">
-                  Check-In RFID
+                <button type="button" 
+                        class="btn btn-sm btn-danger fw-bold" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#modalCheckOut{{ tamu.id }}">
+                  <i class="fas fa-sign-out-alt me-1"></i> Check Out
                 </button>
 
                 <form action="{% url 'delete_reservation' tamu.id %}" method="POST" class="d-inline">
@@ -142,25 +142,25 @@
         <h5 class="modal-title">Check-In Tamu Baru</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <form method="POST" action="{% url 'dashboard' %}">
+      <form method="POST" action="{% url 'reservasi' %}">
         {% csrf_token %}
 
         <div class="modal-body">
           <div class="col-md-6">
-            <label class="small fw-bold mb-2">Pilih kamar</label>
-            <select name="kamar" class="form-select bg-light" required>
-              <option value="" selected>-- Pilih --</option>
-              {% for room in rooms %}
-              <option value="{{ room.room_number }}">
-              {{ room.room_number }} - Rp {{ room.price|intcomma }}
-              </option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Nomor Kamar</label>
-            <input type="text" name="kamar" class="form-control" placeholder="Cth: 101" required>
-          </div>
+                  <label class="small fw-bold mb-2">Pilih kamar</label>
+                  <select name="kamar" class="form-select bg-light" required>
+                    <option value="" selected>-- Pilih --</option>
+                    {% for room in rooms %}
+                    <option value="{{ room.room_number }}">
+                    {{ room.room_number }} - Rp {{ room.price|intcomma }}
+                    </option>
+                    {% endfor %}
+                  </select>
+                </div>
+          <!-- <div class="mb-3"> -->
+          <!--   <label class="form-label">Nomor Kamar</label> -->
+          <!--   <input type="text" name="kamar" class="form-control" placeholder="Cth: 101" required> -->
+          <!-- </div> -->
           <div class="mb-3">
             <label class="form-label">Nama Lengkap</label>
             <input type="text" name="nama_tamu" class="form-control" required>
@@ -182,12 +182,4 @@
     </div>
   </div>
 </div>
-<script>
-  setTimeout(() => {
-    document.querySelectorAll('.alert').forEach(el => {
-      el.classList.remove('show');
-      el.classList.add('fade');
-    });
-  }, 3000);
-</script>
 {% endblock %}

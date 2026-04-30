@@ -50,26 +50,27 @@
           </div>
 
           <div class="card-body p-4">
-            <form method="POST">
+            <form id="formCheckin" method="POST">
               {% csrf_token %}
+              <input type="hidden" name="mode" value="">
 
               {% if messages %}
               {% for msg in messages %}
-                <div class="alert 
-                  {% if msg.tags == 'error' %}alert-danger
-                  {% elif msg.tags == 'success' %}alert-success
-                  {% elif msg.tags == 'warning' %}alert-warning
-                  {% else %}alert-info
-                  {% endif %}
-                  alert-dismissible fade show"
-                  role="alert">
+              <div class="alert 
+                          {% if msg.tags == 'error' %}alert-danger
+                          {% elif msg.tags == 'success' %}alert-success
+                          {% elif msg.tags == 'warning' %}alert-warning
+                          {% else %}alert-info
+                          {% endif %}
+                          alert-dismissible fade show"
+                   role="alert">
 
-                  {{ msg }}
+                {{ msg }}
 
-                  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
               {% endfor %}
-            {% endif %}
+              {% endif %}
 
               <div class="row mb-3">
                 <div class="col-md-6">
@@ -104,16 +105,22 @@
               <div class="row mb-3">
                 <div class="col-md-6">
                   <label class="small fw-bold mb-2">Check-in</label>
-                  <input type="date" name="check_in" id="check_in" class="form-control" required>
+                  <input type="date" name="check_in" id="check_in" class="form-control bg-light" required>
                 </div>
                 <div class="col-md-6">
-                  <label>Check-out</label>
-                  <input type="date" name="check_out" id="check_out" class="form-control" required>
+                  <label class="small fw-bold mb-2">Check-out</label>
+                  <input type="date" name="check_out" id="check_out" class="form-control bg-light" required>
                 </div>
               </div>
-              <div class="d-grid">
-                <button type="submit" class="btn btn-primary fw-bold py-2">
-                  Simpan &amp; check-in tamu
+              <div id="pricePreview" class="alert alert-info mt-2 d-none"></div>
+              <div class="d-grid mb-2 border border-dark rounded">
+                <button type="submit" value="booking" onclick="bookBtn()" class="btn btn-warning">
+                  Booking
+                </button>
+              </div>
+              <div class="d-grid border border-dark rounded">
+                <button type="button" value="checkin" onclick="checkinBtn()" class="btn btn-success">
+                  Check-In (RFID)
                 </button>
               </div>
             </form>
@@ -178,12 +185,14 @@
               {% for room in rooms %}
               <div class="col-md-3">
                 <div class="card h-100 shadow-sm border-0
-                            {% if room.status == 'available' %}
-                            border-start border-success border-4
-                            {% elif room.status == 'booked' %}
+                            {% if room.is_occupied_today %}
                             border-start border-danger border-4
+
+                            {% elif room.is_reserved_future %}
+                            border-start border-warning border-4
+
                             {% else %}
-                            border-start border-secondary border-4
+                            border-start border-success border-4
                             {% endif %}
                             ">
 
@@ -194,35 +203,29 @@
                     Rp {{ room.price|intcomma }}
                     </p>
 
-                  {% if room.is_occupied_today %}
-                      <span class="badge bg-danger">Terisi</span>
+                    {% if room.is_occupied_today %}
+                    <span class="badge bg-danger">Terisi</span>
 
-                  {% elif room.is_reserved_future %}
-                      <span class="badge bg-warning text-dark">Dipesan</span>
+                    {% elif room.is_reserved_future %}
+                    <span class="badge bg-warning text-dark">Dipesan</span>
 
-                  {% else %}
-                  <span class="badge bg-success">Tersedia</span>
-                  {% endif %}
+                    {% else %}
+                    <span class="badge bg-success">Tersedia</span>
+                    {% endif %}
 
-                  {% for tamu in data_tamu %}
-                  {% if tamu.room.id == room.id and not tamu.check_out %}
+                    {% for tamu in room.reservasi %}
+                    {% if not tamu.check_out %}
 
-                  <div class="mt-2 small text-muted">
-                    👤 {{ tamu.nama }}
-                  </div>
+                    <div class="mt-2 small text-muted">
+                      👤 {{ tamu.nama }}
+                    </div>
 
-                  <!-- DATE RANGE -->
-                  <div class="mt-1 small">
-                    {{ tamu.check_in_date|date:"d M" }} → {{ tamu.check_out_date|date:"d M Y" }}
-                  </div>
+                    <div class="mt-1 small">
+                      {{ tamu.check_in_date|date:"d M" }} → {{ tamu.check_out_date|date:"d M Y" }}
+                    </div>
 
-                  <!-- NIGHTS -->
-                  <div class="small text-muted">
-                    {{ tamu.check_out_date|timeuntil:tamu.check_in_date }}
-                  </div>
-
-                  {% endif %}
-                  {% endfor %}
+                    {% endif %}
+                    {% endfor %}
 
                   </div>
                 </div>
@@ -239,17 +242,177 @@
   </div>
 </div>
 </div>
+
+<!-- Popup -->
+<div class="modal fade hidden" id="rfidModal" tabindex="-1" arial-modal="true" role="dialog">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content text-center p-4">
+
+      <h4 id="rfidStatus">Tempelkan kartu RFID...</h4>
+
+      <div id="rfidSpinner" class="my-3">
+        <div class="spinner-border text-primary"></div>
+      </div>
+
+      <div id="rfidResult" class="mt-3"></div>
+
+      <button class="btn btn-success mt-3 d-none" id="rfidCloseBtn" data-bs-dismiss="modal">
+        Selesai
+      </button>
+
+    </div>
+  </div>
+</div>
+
 <script>
-  const checkInInput = document.querySelector('input[name="check_in"]');
-  const checkOutInput = document.querySelector('input[name="check_out"]');
+  function bookBtn(){
+    document.querySelector('input[name="mode"]').value = "booking";
+  }
+  function checkinBtn(){
+    document.querySelector('input[name="mode"]').value = "checkin";
+    checkIn();
+  }
 
+  const form = document.querySelector("#formCheckin");
+
+  // const checkInInput = document.querySelector('input[name="check_in"]');
+  // const checkOutInput = document.querySelector('input[name="check_out"]');
+  const checkInInput = document.querySelector('#check_in');
+  const checkOutInput = document.querySelector('#check_out');
+
+  // Date validation
   checkInInput.addEventListener("change", function() {
-    checkOutInput.min = this.value;
+    checkOutInput.min = checkInInput.value;
 
-    // reset checkout if invalid
-    if (checkOutInput.value && checkOutInput.value <= this.value) {
+    if (checkOutInput.value && checkOutInput.value <= checkInInput.value) {
       checkOutInput.value = "";
     }
   });
+
+  // RFID + Form handler
+  async function checkIn() {
+    <!-- alert("submit"); -->
+
+    const formData = new FormData(form);
+
+    // If NOT check-in → normal submit (booking)
+    if(formData.get("mode") === "booking"){
+      return;
+    }
+    <!-- alert("checkin"); -->
+
+    //  Stop normal submit
+    // e.preventDefault();
+
+    const modal = new bootstrap.Modal(document.getElementById("rfidModal"));
+    //modal.show();
+    modal.show();
+
+    document.getElementById("rfidStatus").innerText = "Menulis ke kartu...";
+    document.getElementById("rfidSpinner").style.display = "block";
+    document.getElementById("rfidResult").innerHTML = "";
+    document.getElementById("rfidCloseBtn").classList.add("d-none");
+
+    let data = await submit(formData);
+    console.log("Data received:", data);
+    <!-- alert("PASS - Data received: " + JSON.stringify(data)); -->
+
+    document.getElementById("rfidSpinner").style.display = "none";
+
+    if(data.status === "success"){
+      document.getElementById("rfidStatus").innerText = "Berhasil!";
+      document.getElementById("rfidResult").innerHTML =
+        `<b>${data.guest}</b><br>Kamar ${data.room}`;
+
+      // reload after success
+      setTimeout(() => {
+        location.reload();
+      }, 1500);
+
+    } else {
+      document.getElementById("rfidStatus").innerText = "Gagal";
+      document.getElementById("rfidResult").innerText = data.message || "Terjadi error";
+    }
+
+    document.getElementById("rfidCloseBtn").classList.remove("d-none");
+    }
+    async function submit(formData) {
+      <!-- alert("fetching"); -->
+      console.log("Starting fetch to api_test...");
+      try {
+        // const response = await fetch("{% url 'api_test' %}", {
+        const response = await fetch("{% url 'api_checkin_rfid' %}", {
+          // method: "GET",
+          method: "POST",
+          body: formData,
+        });
+        console.log("Response received:", response);
+        const data = await response.json();
+        console.log("✓ API Response successfully parsed:", data);
+        document.getElementById("rfidStatus").innerText = "✓ " + data.status;
+        document.getElementById("rfidResult").innerText = JSON.stringify(data);
+        return data;
+      } catch (err) {
+        console.error("✗ API Error:", err);
+        document.getElementById("rfidSpinner").style.display = "none";
+        document.getElementById("rfidStatus").innerText = "✗ Error";
+        document.getElementById("rfidResult").innerText = err.message || String(err);
+        document.getElementById("rfidCloseBtn").classList.remove("d-none");
+        return { status: "error", message: err.message };
+      }
+    }
+
+ // Total Price Preview Function 
+function setupPriceCalculator(prefix="") {
+  const roomSelect = document.querySelector(`${prefix} select[name="kamar"]`);
+  const checkIn = document.querySelector(`${prefix} input[name="check_in"]`);
+  const checkOut = document.querySelector(`${prefix} input[name="check_out"]`);
+  const preview = document.querySelector(`${prefix} #pricePreview, ${prefix} #pricePreviewModal`);
+
+  if (!roomSelect || !checkIn || !checkOut || !preview) return;
+
+  function calculate() {
+    const selectedOption = roomSelect.options[roomSelect.selectedIndex];
+    if (!selectedOption.value) {
+      preview.classList.add("d-none");
+      return;
+    }
+
+    // Extract price from text (Rp 100000)
+    const text = selectedOption.text;
+    const priceMatch = text.match(/Rp\s?([\d.,]+)/);
+    if (!priceMatch) return;
+
+    let price = priceMatch[1].replace(/\./g, "").replace(",", "");
+    price = parseInt(price);
+
+    const inDate = new Date(checkIn.value);
+    const outDate = new Date(checkOut.value);
+
+    if (!checkIn.value || !checkOut.value || outDate <= inDate) {
+      preview.classList.add("d-none");
+      return;
+    }
+
+    const nights = (outDate - inDate) / (1000 * 60 * 60 * 24);
+
+    const total = nights * price;
+
+    preview.innerHTML = `
+      <b>${nights} malam</b> × <b>Rp ${price.toLocaleString("id-ID")}</b><br>
+      <span class="fw-bold text-success">Total: Rp ${total.toLocaleString("id-ID")}</span>
+    `;
+
+    preview.classList.remove("d-none");
+  }
+
+  roomSelect.addEventListener("change", calculate);
+  checkIn.addEventListener("change", calculate);
+  checkOut.addEventListener("change", calculate);
+}
+
+// Run for both
+setupPriceCalculator(""); // dashboard
+setupPriceCalculator("#modalCheckIn"); // modal
 </script>
 {% endblock %}
